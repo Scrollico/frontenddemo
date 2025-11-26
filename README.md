@@ -1,9 +1,5 @@
 # Alara AI
 
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
-
 ## About
 
 **Alara AI** is a prestigious, AI-powered executive intelligence suite designed to provide business leaders with comprehensive daily briefings, real-time market intelligence, and strategic content generation. Built with React and TypeScript, Alara AI leverages Google's Gemini AI to deliver personalized insights, competitor analysis, and actionable intelligence tailored to your organization's needs.
@@ -11,6 +7,7 @@
 ## Features
 
 ### 📊 Executive Daily Briefing
+
 - **AI-Generated Daily Briefings**: Personalized executive summaries powered by Gemini AI
 - **Multi-Format Export**: Download briefings as PDF documents
 - **Audio Podcast Generation**: Convert briefings into audio format for on-the-go consumption
@@ -18,6 +15,7 @@
 - **Market-Priority Focused**: Briefings tailored to your selected market priority (General, Energy, Finance, Innovation, Business, or Technology)
 
 ### 🔍 Market Intelligence
+
 - **Real-Time Market Signals**: Track emerging trends and market movements
 - **Competitor Radar**: Comprehensive competitor analysis and tracking
 - **Strategic Heatmaps**: Visual representation of market opportunities and risks
@@ -26,11 +24,13 @@
 - **Competitive Intelligence**: Compare your organization against tracked competitors
 
 ### ✍️ Content Studio
+
 - **AI-Powered Content Generation**: Create strategic content using advanced AI
 - **Multiple Content Formats**: Generate various types of business content
 - **Persona-Based Writing**: Content tailored to your selected voice and persona
 
 ### ⚙️ Settings & Customization
+
 - **Market Prioritization**: Focus on specific sectors (Energy, Finance, Innovation, Business, Technology, or General)
 - **Competitor Watchlist**: Manage and track your organization's competitors
 - **Source Management**: Configure data sources and regulatory feeds
@@ -55,25 +55,29 @@
 ## Installation
 
 1. **Clone the repository:**
+
    ```bash
    git clone https://github.com/Scrollico/frontenddemo.git
    cd frontenddemo
    ```
 
 2. **Install dependencies:**
+
    ```bash
    npm install
    ```
 
 3. **Set up environment variables:**
    Create a `.env.local` file in the root directory and add your Gemini API key:
+
    ```env
    GEMINI_API_KEY=your_api_key_here
    ```
-   
+
    You can obtain a Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey).
 
 4. **Run the development server:**
+
    ```bash
    npm run dev
    ```
