@@ -277,9 +277,9 @@ const ContentStudio: React.FC<ContentStudioProps> = ({ view, onNavigate }) => {
         };
 
         return (
-            <div className="h-full overflow-y-auto flex justify-center custom-scrollbar p-6 pb-32">
+            <div className="h-full overflow-y-auto custom-scrollbar p-6 pb-32">
                 {/* Glassy Box instead of solid white/black */}
-                <div className="w-full max-w-[480px] bg-white/60 dark:bg-slate-800/40 backdrop-blur-2xl border border-white/20 dark:border-white/10 rounded-xl shadow-xl flex flex-col relative overflow-hidden min-h-[500px]">
+                <div className="mx-auto w-full max-w-[480px] bg-white/60 dark:bg-slate-800/40 backdrop-blur-2xl border border-white/20 dark:border-white/10 rounded-xl shadow-xl flex flex-col relative overflow-hidden min-h-[500px]">
                     <div className="p-4 border-b border-gray-100 dark:border-white/5 flex justify-between items-center bg-white/40 dark:bg-white/5 backdrop-blur-md shrink-0">
                         <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">Post Preview</span>
                         <Linkedin className="w-4 h-4 text-[#0A66C2]" />
@@ -314,9 +314,9 @@ const ContentStudio: React.FC<ContentStudioProps> = ({ view, onNavigate }) => {
         };
 
         return (
-            <div className="h-full overflow-y-auto flex justify-center custom-scrollbar p-10 pb-32 relative">
+            <div className="h-full overflow-y-auto custom-scrollbar p-10 pb-32 relative">
                 {/* Glass Slate - No solid backgrounds */}
-                <div className="w-full max-w-[800px] bg-white/60 dark:bg-slate-800/40 backdrop-blur-2xl shadow-2xl p-12 relative border border-white/20 dark:border-white/10 rounded-2xl overflow-hidden min-h-full">
+                <div className="mx-auto w-full max-w-[800px] bg-white/60 dark:bg-slate-800/40 backdrop-blur-2xl shadow-2xl p-12 relative border border-white/20 dark:border-white/10 rounded-2xl overflow-hidden min-h-full">
 
                     {/* Header */}
                     <div className="mb-10 border-b border-gray-200 dark:border-white/10 pb-8">
