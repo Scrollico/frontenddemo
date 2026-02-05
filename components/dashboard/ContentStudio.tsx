@@ -584,7 +584,7 @@ const ContentStudio: React.FC<ContentStudioProps> = ({ view, onNavigate }) => {
                         <div className="aspect-[16/9] w-full p-4 relative min-h-[400px]">
                             <ResponsiveContainer width="100%" height="100%">
                                 {chartData.type === 'line' || chartData.type === 'area' ? (
-                                    <AreaChart data={chartData.data}>
+                                    <AreaChart data={chartData.data} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
                                         <defs>
                                             <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
                                                 <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8} />
@@ -592,17 +592,17 @@ const ContentStudio: React.FC<ContentStudioProps> = ({ view, onNavigate }) => {
                                             </linearGradient>
                                         </defs>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#333' : '#eee'} />
-                                        <XAxis dataKey="name" tick={{ fill: '#888', fontSize: 12, fontWeight: 500 }} axisLine={false} tickLine={false} dy={10} />
-                                        <YAxis tick={{ fill: '#888', fontSize: 12, fontWeight: 500 }} axisLine={false} tickLine={false} dx={-10} />
-                                        <Tooltip contentStyle={{ backgroundColor: isDark ? '#333' : '#fff', borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }} />
+                                        <XAxis dataKey="name" tick={{ fill: isDark ? '#9CA3AF' : '#4B5563', fontSize: 13, fontWeight: 500 }} axisLine={false} tickLine={false} dy={10} interval={0} height={60} />
+                                        <YAxis tick={{ fill: isDark ? '#9CA3AF' : '#4B5563', fontSize: 12, fontWeight: 500 }} axisLine={false} tickLine={false} dx={-10} />
+                                        <Tooltip contentStyle={{ backgroundColor: isDark ? '#1F2937' : '#fff', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 10px 30px rgba(0,0,0,0.2)', color: isDark ? '#fff' : '#000' }} />
                                         <Area type="monotone" dataKey="value" stroke="#3B82F6" fillOpacity={1} fill="url(#colorValue)" strokeWidth={3} />
                                     </AreaChart>
                                 ) : (
-                                    <BarChart data={chartData.data}>
+                                    <BarChart data={chartData.data} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#333' : '#eee'} />
-                                        <XAxis dataKey="name" tick={{ fill: '#888', fontSize: 12, fontWeight: 500 }} axisLine={false} tickLine={false} dy={10} />
-                                        <YAxis tick={{ fill: '#888', fontSize: 12, fontWeight: 500 }} axisLine={false} tickLine={false} dx={-10} />
-                                        <Tooltip contentStyle={{ backgroundColor: isDark ? '#333' : '#fff', borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                                        <XAxis dataKey="name" tick={{ fill: isDark ? '#9CA3AF' : '#4B5563', fontSize: 13, fontWeight: 500 }} axisLine={false} tickLine={false} dy={10} interval={0} height={60} />
+                                        <YAxis tick={{ fill: isDark ? '#9CA3AF' : '#4B5563', fontSize: 12, fontWeight: 500 }} axisLine={false} tickLine={false} dx={-10} />
+                                        <Tooltip contentStyle={{ backgroundColor: isDark ? '#1F2937' : '#fff', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 10px 30px rgba(0,0,0,0.2)', color: isDark ? '#fff' : '#000' }} cursor={{ fill: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }} />
                                         <Bar dataKey="value" fill="#3B82F6" radius={[4, 4, 0, 0]} />
                                     </BarChart>
                                 )}
