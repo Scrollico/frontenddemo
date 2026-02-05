@@ -11,6 +11,9 @@ const getAI = () => {
       
     if (!apiKey) {
       console.warn("AI Business Suite: API Key is missing. AI features will not function.");
+      console.log("Debug Info: process.env.API_KEY is", typeof process !== 'undefined' && process.env ? typeof process.env.API_KEY : "undefined");
+    } else {
+       console.log("AI Business Suite: AI Initialized. Key length:", apiKey.length);
     }
     
     aiClient = new GoogleGenAI({ apiKey: apiKey });
