@@ -465,10 +465,10 @@ export const chatWithAgent = async (history: {role: string, parts: {text: string
     const context = getGlobalContext();
 
     const chat = ai.chats.create({
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-2.0-flash',
       history: history,
       config: {
-        tools: [{ googleSearch: {} }],
+        tools: [],
         systemInstruction: `
         You are the **Predictive Engine** of the AI Business Suite.
         Your role is to provide deep, high-level strategic foresight based on the available market data and news.
