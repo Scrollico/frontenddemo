@@ -7,9 +7,9 @@
   <p><strong>The Next-Generation Executive Intelligence Engine</strong></p>
   
   <p>
-    <a href="#features">Features</a> •
-    <a href="#getting-started">Getting Started</a> •
-    <a href="#tech-stack">Tech Stack</a>
+    <a href="#-key-features">Features</a> •
+    <a href="#-getting-started">Getting Started</a> •
+    <a href="#-tech-stack">Tech Stack</a>
   </p>
 </div>
 
@@ -43,6 +43,7 @@ Built with a focus on **Neo-Brutalist/Glassmorphism** aesthetics, the interface 
 - **Dark/Light Mode**: Fully thematic support with ambient lighting effects.
 
 ## 🛠 Tech Stack
+
 
 - **Core**: React 19, TypeScript, Vite
 - **Styling**: Tailwind CSS (Custom Design System)
