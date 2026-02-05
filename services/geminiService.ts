@@ -5,15 +5,30 @@ let aiClient: GoogleGenAI | null = null;
 
 const getAI = () => {
   if (!aiClient) {
-    const apiKey = (typeof process !== 'undefined' && process.env && process.env.API_KEY) 
-      ? process.env.API_KEY 
-      : '';
-      
+    // Robust checks for different environment variable injection methods
+    let apiKey = '';
+    
+    // Check 1: process.env (Injected by Vite Define)
+    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+      apiKey = process.env.API_KEY;
+    } 
+    // Check 2: import.meta.env (Standard Vite)
+    else if (import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) {
+      apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    }
+    // Check 3: Standard Env var
+    else if (import.meta.env && import.meta.env.GEMINI_API_KEY) {
+      apiKey = import.meta.env.GEMINI_API_KEY;
+    }
+
     if (!apiKey) {
-      console.warn("AI Business Suite: API Key is missing. AI features will not function.");
-      console.log("Debug Info: process.env.API_KEY is", typeof process !== 'undefined' && process.env ? typeof process.env.API_KEY : "undefined");
+      // If we are here, NO key was found.
+      console.error("CRITICAL: AI Business Suite API Key missing.");
+      console.log("Debug: process.env.API_KEY:", typeof process !== 'undefined' && process.env ? process.env.API_KEY : 'undefined');
+      console.log("Debug: import.meta.env.VITE_GEMINI_API_KEY:", import.meta.env ? import.meta.env.VITE_GEMINI_API_KEY : 'undefined');
     } else {
-       console.log("AI Business Suite: AI Initialized. Key length:", apiKey.length);
+       // Key found
+       console.log("AI Business Suite: AI Initialized successfully.");
     }
     
     aiClient = new GoogleGenAI({ apiKey: apiKey });
