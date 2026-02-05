@@ -379,26 +379,38 @@ const ContentStudio: React.FC<ContentStudioProps> = ({ view, onNavigate }) => {
         const exportPDF = async () => {
             if (!slidesContainerRef.current) return;
 
-            setIsGenerating(true); // Re-use loading state for UI feedback
-            const doc = new jsPDF({ orientation: 'landscape', unit: 'px', format: [1280, 720] }); // 720p aspect ratio
+            try {
+                setIsGenerating(true); // Re-use loading state for UI feedback
+                const doc = new jsPDF({ orientation: 'landscape', unit: 'px', format: [1280, 720] }); // 720p aspect ratio
 
-            const slideElements = slidesContainerRef.current.querySelectorAll('.slide-node');
+                const slideElements = slidesContainerRef.current.querySelectorAll('.slide-node');
 
-            for (let i = 0; i < slideElements.length; i++) {
-                if (i > 0) doc.addPage();
+                if (slideElements.length === 0) {
+                    console.warn("No slides to export");
+                    return;
+                }
 
-                const canvas = await html2canvas(slideElements[i] as HTMLElement, {
-                    scale: 2, // Higher resolution
-                    useCORS: true, // Allow cross-origin images
-                    backgroundColor: '#000000'
-                });
+                for (let i = 0; i < slideElements.length; i++) {
+                    if (i > 0) doc.addPage();
 
-                const imgData = canvas.toDataURL('image/jpeg', 0.9);
-                doc.addImage(imgData, 'JPEG', 0, 0, 1280, 720);
+                    const canvas = await html2canvas(slideElements[i] as HTMLElement, {
+                        scale: 2, // Higher resolution
+                        useCORS: true, // Allow cross-origin images
+                        backgroundColor: '#000000',
+                        logging: false // Disable html2canvas logging
+                    });
+
+                    const imgData = canvas.toDataURL('image/jpeg', 0.9);
+                    doc.addImage(imgData, 'JPEG', 0, 0, 1280, 720);
+                }
+
+                doc.save(`Presentation_${new Date().toISOString().split('T')[0]}.pdf`);
+            } catch (error) {
+                console.error("PDF Export Failed:", error);
+                alert("Failed to generate PDF. Please try again.");
+            } finally {
+                setIsGenerating(false);
             }
-
-            doc.save(`Presentation_${new Date().toISOString().split('T')[0]}.pdf`);
-            setIsGenerating(false);
         };
 
         const exportPPTX = async () => {
