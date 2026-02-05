@@ -105,6 +105,7 @@ const SlideImage = ({ keyword }: { keyword: string }) => {
         <img
             src={src}
             alt="Slide Background"
+            crossOrigin="anonymous"
             className="absolute inset-0 w-full h-full object-cover opacity-60"
             onError={(e) => {
                 // Fallback if generic fails
@@ -119,6 +120,7 @@ const ContentStudio: React.FC<ContentStudioProps> = ({ view, onNavigate }) => {
     const [tone, setTone] = useState('Visionary');
     const [generatedContent, setGeneratedContent] = useState<any>('');
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
     const [copied, setCopied] = useState(false);
     const [slides, setSlides] = useState<any[]>([]);
     const [chartData, setChartData] = useState<any>(null);
@@ -380,7 +382,7 @@ const ContentStudio: React.FC<ContentStudioProps> = ({ view, onNavigate }) => {
             if (!slidesContainerRef.current) return;
 
             try {
-                setIsGenerating(true); // Re-use loading state for UI feedback
+                setIsExporting(true);
                 const doc = new jsPDF({ orientation: 'landscape', unit: 'px', format: [1280, 720] }); // 720p aspect ratio
 
                 const slideElements = slidesContainerRef.current.querySelectorAll('.slide-node');
@@ -409,68 +411,73 @@ const ContentStudio: React.FC<ContentStudioProps> = ({ view, onNavigate }) => {
                 console.error("PDF Export Failed:", error);
                 alert("Failed to generate PDF. Please try again.");
             } finally {
-                setIsGenerating(false);
+                setIsExporting(false);
             }
         };
 
         const exportPPTX = async () => {
-            setIsGenerating(true);
-            const pptx = new PptxGenJS();
+            setIsExporting(true);
+            try {
+                const pptx = new PptxGenJS();
 
-            // Define master layout if needed, or just add slides loop
+                // Define master layout if needed, or just add slides loop
 
-            for (const slide of slides) {
-                const slideObj = pptx.addSlide();
+                for (const slide of slides) {
+                    const slideObj = pptx.addSlide();
 
-                // Add Background Image
-                // Note: PptxGenJS can take a URL. Pollinations URLs might be slow, so we trust it handles it.
-                // If not, we might need to pre-fetch. For now, try direct URL.
-                const bgPrompt = encodeURIComponent(`${slide.visualNote || 'business'} abstract business background, high quality, 4k`);
-                const bgUrl = `https://image.pollinations.ai/prompt/${bgPrompt}?width=1600&height=900&nologo=true`;
+                    // Add Background Image
+                    // Note: PptxGenJS can take a URL. Pollinations URLs might be slow, so we trust it handles it.
+                    // If not, we might need to pre-fetch. For now, try direct URL.
+                    const bgPrompt = encodeURIComponent(`${slide.visualNote || 'business'} abstract business background, high quality, 4k`);
+                    const bgUrl = `https://image.pollinations.ai/prompt/${bgPrompt}?width=1600&height=900&nologo=true`;
 
-                slideObj.background = { path: bgUrl };
+                    slideObj.background = { path: bgUrl };
 
-                // Dark Overlay built-in? No, but we can add a semi-transparent rectangle
-                slideObj.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: '100%', h: '100%', fill: { color: '000000', transparency: 40 } });
+                    // Dark Overlay built-in? No, but we can add a semi-transparent rectangle
+                    slideObj.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: '100%', h: '100%', fill: { color: '000000', transparency: 40 } });
 
-                // Title
-                slideObj.addText(slide.title, {
-                    x: 0.5, y: 1.5, w: 9, h: 1,
-                    fontSize: 44, fontFace: 'Arial', bold: true, color: 'FFFFFF',
-                    shadow: { type: 'outer', color: '000000', blur: 10, offset: 2, angle: 45 }
-                });
+                    // Title
+                    slideObj.addText(slide.title, {
+                        x: 0.5, y: 1.5, w: 9, h: 1,
+                        fontSize: 44, fontFace: 'Arial', bold: true, color: 'FFFFFF',
+                        shadow: { type: 'outer', color: '000000', blur: 10, offset: 2, angle: 45 }
+                    });
 
-                // Subtitle
-                slideObj.addText(slide.subtitle, {
-                    x: 0.5, y: 2.6, w: 9, h: 0.5,
-                    fontSize: 20, fontFace: 'Arial', color: 'DDDDDD', italic: true
-                });
+                    // Subtitle
+                    slideObj.addText(slide.subtitle, {
+                        x: 0.5, y: 2.6, w: 9, h: 0.5,
+                        fontSize: 20, fontFace: 'Arial', color: 'DDDDDD', italic: true
+                    });
 
-                // Bullets
-                if (slide.points && slide.points.length > 0) {
-                    // We'll create a text box with bullets
-                    const bulletItems = slide.points.map((p: string) => ({
-                        text: p,
-                        options: { fontSize: 18, color: 'EEEEEE', breakLine: true, bullet: true }
-                    }));
+                    // Bullets
+                    if (slide.points && slide.points.length > 0) {
+                        // We'll create a text box with bullets
+                        const bulletItems = slide.points.map((p: string) => ({
+                            text: p,
+                            options: { fontSize: 18, color: 'EEEEEE', breakLine: true, bullet: true }
+                        }));
 
-                    // Add a "Glass card" background for text if needed, or just text
-                    slideObj.addText(bulletItems, {
-                        x: 1, y: 3.5, w: 8, h: 3.5,
-                        align: 'left', valign: 'top',
-                        // rect: { fill: { color: 'FFFFFF', transparency: 90 } } // Optional glass effect
+                        // Add a "Glass card" background for text if needed, or just text
+                        slideObj.addText(bulletItems, {
+                            x: 1, y: 3.5, w: 8, h: 3.5,
+                            align: 'left', valign: 'top',
+                            // rect: { fill: { color: 'FFFFFF', transparency: 90 } } // Optional glass effect
+                        });
+                    }
+
+                    // Footer
+                    slideObj.addText(`AI Business Suite • ${new Date().toLocaleDateString()}`, {
+                        x: 0.5, y: 7, w: 9, h: 0.3,
+                        fontSize: 10, color: '888888', align: 'center'
                     });
                 }
 
-                // Footer
-                slideObj.addText(`AI Business Suite • ${new Date().toLocaleDateString()}`, {
-                    x: 0.5, y: 7, w: 9, h: 0.3,
-                    fontSize: 10, color: '888888', align: 'center'
-                });
+                await pptx.writeFile({ fileName: `Keynote_Deck_${new Date().toISOString().split('T')[0]}.pptx` });
+            } catch (e) {
+                console.error("PPTX Export failed", e);
+            } finally {
+                setIsExporting(false);
             }
-
-            await pptx.writeFile({ fileName: `Keynote_Deck_${new Date().toISOString().split('T')[0]}.pptx` });
-            setIsGenerating(false);
         };
 
         return (
@@ -483,11 +490,11 @@ const ContentStudio: React.FC<ContentStudioProps> = ({ view, onNavigate }) => {
                         <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
                     </div>
                     <div className="flex gap-2">
-                        <button onClick={exportPDF} disabled={!slides.length || isGenerating} className="flex items-center gap-1 px-4 py-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-lg text-xs font-bold text-white transition-colors duration-75 disabled:opacity-50">
-                            {isGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileDown className="w-3 h-3" />} PDF
+                        <button onClick={exportPDF} disabled={!slides.length || isExporting} className="flex items-center gap-1 px-4 py-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-lg text-xs font-bold text-white transition-colors duration-75 disabled:opacity-50">
+                            {isExporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileDown className="w-3 h-3" />} PDF
                         </button>
-                        <button onClick={exportPPTX} disabled={!slides.length || isGenerating} className="flex items-center gap-1 px-4 py-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-lg text-xs font-bold text-white transition-colors duration-75 disabled:opacity-50">
-                            {isGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Presentation className="w-3 h-3" />} PPTX
+                        <button onClick={exportPPTX} disabled={!slides.length || isExporting} className="flex items-center gap-1 px-4 py-1.5 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-lg text-xs font-bold text-white transition-colors duration-75 disabled:opacity-50">
+                            {isExporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Presentation className="w-3 h-3" />} PPTX
                         </button>
                     </div>
                 </div>
@@ -697,10 +704,12 @@ const ContentStudio: React.FC<ContentStudioProps> = ({ view, onNavigate }) => {
                 </div>
 
                 <div className="flex-1 overflow-hidden relative">
-                    {isGenerating && (
+                    {(isGenerating || isExporting) && (
                         <div className="absolute inset-0 z-50 bg-white/80 dark:bg-[#1c1c1e]/90 backdrop-blur-sm flex flex-col items-center justify-center">
                             <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
-                            <p className="text-sm font-medium text-gray-600 dark:text-gray-300 animate-pulse">Consulting Neural Models...</p>
+                            <p className="text-sm font-medium text-gray-600 dark:text-gray-300 animate-pulse">
+                                {isExporting ? 'Generating Document...' : 'Consulting Neural Models...'}
+                            </p>
                         </div>
                     )}
 
