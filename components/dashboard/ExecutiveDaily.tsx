@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { RefreshCw, AudioLines, Download, Play, Pause, SkipForward, SkipBack, Share2, Mail, ScrollText, CheckCircle, ExternalLink, StopCircle, Volume2, Globe, Clock, Settings2, CloudSun, Wind, Droplets, Quote, ListMusic, BarChart3, Loader2, Video as VideoIcon, Upload, Zap, Lightbulb, BookOpen, TrendingUp, Target, Activity, AlignLeft, AlignJustify } from 'lucide-react';
+import { RefreshCw, AudioLines, Download, Play, Pause, SkipForward, SkipBack, Share2, Mail, ScrollText, CheckCircle, ExternalLink, StopCircle, Volume2, Globe, Clock, Settings2, CloudSun, Wind, Droplets, Quote, ListMusic, BarChart3, Loader2, Video as VideoIcon, Upload, Zap, Lightbulb, BookOpen, TrendingUp, Target, Activity, AlignLeft, AlignJustify, BrainCircuit } from 'lucide-react';
 import { GlassCard } from '../ui/GlassCard';
 import { SpiralAnimation } from '../ui/SpiralAnimation';
 import { generateDailyBriefing, generateSpeech, generateVeoVideo, generatePodcastAudio } from '../../services/geminiService';
@@ -165,10 +165,11 @@ const PodcastView: React.FC<{
   playPlaylistTrack: (index: number) => void;
   audioRef: React.RefObject<HTMLAudioElement | null>;
   formatTime: (time: number) => string;
+  stopPlayback: () => void;
 }> = ({
   playlist, currentAudioId, isPlaying, isAudioLoading, duration, currentTime,
   date, playbackSpeed, setPlaybackSpeed, handleSeek, togglePlayback,
-  playPlaylistTrack, audioRef, formatTime
+  playPlaylistTrack, audioRef, formatTime, stopPlayback
 }) => (
     <div className="flex flex-col md:flex-row h-full gap-6 md:gap-12 px-4 md:px-6 py-4 max-w-6xl mx-auto w-full items-center justify-center">
       {/* Left Side - Visualizer & Track Info */}
@@ -251,6 +252,14 @@ const PodcastView: React.FC<{
             </button>
 
             <div className="flex items-center gap-6">
+              <button
+                onClick={stopPlayback}
+                disabled={!currentAudioId}
+                className="p-2 text-gray-400 hover:text-red-500 transition-colors duration-75 disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-white/5 rounded-full"
+                title="Stop & Reset"
+              >
+                <StopCircle className="w-6 h-6" />
+              </button>
               <button
                 onClick={() => { if (audioRef.current) audioRef.current.currentTime -= 10; }}
                 disabled={!currentAudioId}
@@ -357,18 +366,70 @@ const ExportView: React.FC<{
 
 const SourcesSection: React.FC<{ groundingMetadata: any; summaryMode: string }> = ({ groundingMetadata, summaryMode }) => {
   if (!groundingMetadata?.groundingChunks?.length || summaryMode === 'short') return null;
+
+  // Filter chunks that have web URIs for a cleaner "Referral News" look
+  const newsSources = groundingMetadata.groundingChunks.filter((chunk: any) => chunk.web?.uri);
+  if (newsSources.length === 0) return null;
+
   return (
-    <div className="mt-8 pt-6 border-t border-gray-200 dark:border-white/10">
-      <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Verified Sources</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        {groundingMetadata.groundingChunks.map((chunk: any, i: number) => (
-          chunk.web?.uri && (
-            <a key={i} href={chunk.web.uri} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[11px] text-gray-600 dark:text-gray-400 hover:underline bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 px-3 py-2 rounded transition-colors duration-75 border border-transparent">
-              <Globe className="w-3 h-3 flex-shrink-0" />
-              <span className="truncate">{chunk.web.title || chunk.web.uri}</span>
-            </a>
-          )
+    <div className="mt-16 pt-12 border-t border-gray-200 dark:border-white/10 animate-fade-in">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 bg-blue-600/10 rounded-2xl flex items-center justify-center border border-blue-500/20 shadow-lg shadow-blue-500/5">
+            <Globe className="w-7 h-7 text-blue-600 dark:text-blue-400" strokeWidth={1.5} />
+          </div>
+          <div>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Intelligence Grounding</h3>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-[0.3em] mt-1.5 font-bold">Agentic Multi-Source Verification</p>
+          </div>
+        </div>
+
+        <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-white/5 rounded-full border border-gray-200 dark:border-white/10">
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Real-time Signals Active</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {newsSources.map((chunk: any, i: number) => (
+          <a
+            key={i}
+            href={chunk.web.uri}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 p-3 bg-white/40 dark:bg-white/5 border border-white/20 dark:border-white/10 rounded-xl hover:bg-white/60 dark:hover:bg-white/10 transition-all group"
+          >
+            <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20 group-hover:scale-110 transition-transform">
+              <Globe className="w-4 h-4 text-blue-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h4 className="text-xs font-bold text-gray-900 dark:text-white truncate group-hover:text-blue-400 transition-colors">
+                {chunk.web.title}
+              </h4>
+              <p className="text-[9px] text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider truncate">
+                {new URL(chunk.web.uri).hostname.replace('www.', '')}
+              </p>
+            </div>
+            <ExternalLink className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-all" />
+          </a>
         ))}
+      </div>
+
+      {/* Verification Badge */}
+      <div className="mt-10 p-6 glass-liquid rounded-[2rem] border border-blue-500/10 relative overflow-hidden group">
+        <div className="absolute -right-20 -top-20 w-64 h-64 bg-blue-500/5 rounded-full blur-[80px] pointer-events-none" />
+
+        <div className="flex items-start gap-5 relative z-10">
+          <div className="p-3 bg-blue-500/10 rounded-2xl shrink-0 mt-0.5 border border-blue-500/20">
+            <BrainCircuit className="w-6 h-6 text-blue-400" strokeWidth={1.5} />
+          </div>
+          <div>
+            <p className="text-xs font-black text-white mb-2 uppercase tracking-[0.3em]">Scrolli's RAG AI Engine</p>
+            <p className="text-sm text-gray-400 leading-relaxed font-light max-w-3xl">
+              These sources represent the grounding layer of today's briefing. Each link has been cross-referenced by the <span className="text-blue-400 font-medium">Scrolli's RAG AI Engine</span> to eliminate noise and ensure maximum strategic relevance for your current market priority.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -392,6 +453,17 @@ const ExecutiveDaily: React.FC<ExecutiveDailyProps> = ({ view, marketPriority })
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [playlist, setPlaylist] = useState<PlaylistTrack[]>([]);
+
+  const stopPlayback = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setCurrentAudioId(null);
+    activeRequestIdRef.current = null;
+  };
 
   // Using ref for audio element to persist across renders but manageable in effects
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -491,9 +563,10 @@ const ExecutiveDaily: React.FC<ExecutiveDailyProps> = ({ view, marketPriority })
     if (audioRef.current && currentAudioId) {
       if (!audioRef.current.paused) {
         audioRef.current.pause();
+        // Listener should handle setIsPlaying(false) but manual sync is safer here
         setIsPlaying(false);
       } else {
-        audioRef.current.play();
+        audioRef.current.play().catch(e => console.error("Play failed", e));
         setIsPlaying(true);
       }
     } else if (!currentAudioId && playlist.length > 0) {
@@ -576,8 +649,19 @@ const ExecutiveDaily: React.FC<ExecutiveDailyProps> = ({ view, marketPriority })
       };
 
       audioRef.current = audio;
-      await audio.play();
+
+      // Ensure state is updated before playing to prevent button flicker
       setIsAudioLoading(false);
+
+      try {
+        await audio.play();
+        // Fallback sync in case onplay didn't fire immediately
+        if (activeRequestIdRef.current === id) setIsPlaying(true);
+      } catch (err) {
+        console.warn("Autoplay blocked or play interrupted", err);
+        // Many browsers block autoplay unless user interacted
+        setIsPlaying(false);
+      }
     } catch (error) {
       console.error("Audio Playback Error", error);
       if (activeRequestIdRef.current === id) {
@@ -882,6 +966,7 @@ Generated by AI Business Suite
             playPlaylistTrack={playPlaylistTrack}
             audioRef={audioRef}
             formatTime={formatTime}
+            stopPlayback={stopPlayback}
           />
         </GlassCard>
       ) : view === 'daily_export' ? (

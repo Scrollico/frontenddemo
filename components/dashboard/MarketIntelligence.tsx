@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { ResponsiveContainer, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Tooltip, Legend, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { Send, Sparkles, ArrowUpRight, ArrowDownRight, MoreHorizontal, Globe, Activity, RefreshCw, TrendingUp, ChevronRight, Info, BarChart3, Zap, AlertTriangle, BrainCircuit, Target, Lightbulb, Compass, FileText, TrendingDown, Download, Bookmark, Users, Signal, Trophy, Percent, ShieldCheck, Crosshair, Newspaper, DollarSign, Briefcase, X } from 'lucide-react';
+import { Send, Sparkles, ArrowUpRight, ArrowDownRight, MoreHorizontal, Globe, Activity, RefreshCw, TrendingUp, ChevronRight, Info, BarChart3, Zap, AlertTriangle, BrainCircuit, Target, Lightbulb, Compass, FileText, TrendingDown, Download, Bookmark, Users, Signal, Trophy, Percent, ShieldCheck, Crosshair, Newspaper, DollarSign, Briefcase, X, Share2, ExternalLink } from 'lucide-react';
+import { LiquidGlassButton } from '../ui/LiquidGlassButton';
 import { GlassCard } from '../ui/GlassCard';
 import { HeatmapItem, NicheTopic, ChatMessage, MarketPriority } from '../../types';
 import { chatWithAgent, generateMarketSignals, generateCompetitorAnalysis } from '../../services/geminiService';
@@ -22,6 +23,10 @@ interface EnrichedHeatmapItem extends HeatmapItem {
     volume: string;
     insight: string;
     indexValue?: string; // e.g. "14,500"
+    marketCap?: string;
+    peRatio?: string;
+    high52?: string;
+    low52?: string;
 }
 
 // Extend ChatMessage to hold metadata
@@ -54,8 +59,9 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
     const [loading, setLoading] = useState(false);
     const [expandedInsightId, setExpandedInsightId] = useState<number | null>(null);
 
-    // Niche Detail Modal State
+    // Niche & Sector Detail Modal State
     const [selectedNiche, setSelectedNiche] = useState<NicheTopic | null>(null);
+    const [selectedSector, setSelectedSector] = useState<EnrichedHeatmapItem | null>(null);
 
     // Radar State - Initialize with DEFAULT data to prevent empty state
     const [radarData, setRadarData] = useState<any[]>(DEFAULT_RADAR_DATA);
@@ -70,30 +76,87 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
     useEffect(() => {
         // Immediate population with premium mock data
         setSectors([
-            { sector: 'Technology', indexValue: '18,342', change: 2.8, volatility: 'High', driver: 'AI Hardware Rally', volume: 'High', insight: 'Semiconductor earnings beat expectations by 15%, signaling sustained demand for AI infrastructure well into Q4, with cloud providers increasing CapEx guidance.' },
-            { sector: 'Energy', indexValue: '4,210', change: -1.2, volatility: 'Medium', driver: 'OPEC+ Supply', volume: 'Med', insight: 'Price correction following inventory surplus report; major producers likely to maintain current output caps to stabilize floor price around $78/barrel.' },
-            { sector: 'Health', indexValue: '5,890', change: 0.9, volatility: 'Low', driver: 'BioTech M&A', volume: 'Med', insight: 'Defensive rotation into large-cap pharma as investors seek stability amidst rate uncertainty, fueled by rumors of a mega-merger in the oncology space.' },
-            { sector: 'Finance', indexValue: '34,205', change: 1.5, volatility: 'Medium', driver: 'Yield Curve', volume: 'High', insight: 'Regional banks stabilizing post-stress test results, with net interest margins showing unexpected resilience despite inverted yield curve pressures.' },
-            { sector: 'Crypto', indexValue: '68,500', change: -3.4, volatility: 'High', driver: 'Regulatory News', volume: 'High', insight: 'Sharp sell-off triggered by new SEC guidance on staking services; institutional volume remains flat as uncertainty regarding ETF approvals lingers.' },
-            { sector: 'Retail', indexValue: '2,450', change: 0.4, volatility: 'Low', driver: 'Consumer Sentiment', volume: 'Low', insight: 'Mixed earnings from big-box retailers suggest consumer spending is shifting heavily towards essentials and discount channels.' },
-            { sector: 'Real Estate', indexValue: '1,120', change: -0.5, volatility: 'Low', driver: 'Mortgage Rates', volume: 'Low', insight: 'Commercial sector remains under pressure due to refinancing risks in metropolitan office markets, though industrial warehousing demand stays robust.' },
-            { sector: 'Industrials', indexValue: '9,840', change: 1.8, volatility: 'Medium', driver: 'Infrastructure Bill', volume: 'Med', insight: 'Capital goods orders showing strength driven by federal spending on green manufacturing hubs and defense contract renewals.' },
-            { sector: 'Utilities', indexValue: '870', change: 0.2, volatility: 'Low', driver: 'Safe Haven', volume: 'Low', insight: 'Flat performance amidst growth sector rally; dividend yields remain attractive for conservative portfolios seeking inflation hedges.' },
-            { sector: 'Materials', indexValue: '3,300', change: 1.1, volatility: 'Medium', driver: 'Commodity Prices', volume: 'Med', insight: 'Copper demand rising on EV production targets; lithium markets showing signs of bottoming out after last quarter\'s oversold conditions.' },
-            { sector: 'Cons. Disc.', indexValue: '6,780', change: 2.1, volatility: 'High', driver: 'Luxury Demand', volume: 'High', insight: 'Asian markets driving luxury rebound, specifically in high-end fashion and automotive segments, offsetting softer North American sales.' },
-            { sector: 'Telecom', indexValue: '1,950', change: -0.8, volatility: 'Low', driver: '5G CapEx', volume: 'Low', insight: 'Slowing subscriber growth in EU markets prompting CapEx cuts for major carriers, impacting equipment suppliers negatively.' },
+            {
+                sector: 'Technology',
+                indexValue: '18,342',
+                change: 2.8,
+                volatility: 'High',
+                driver: 'AI Hardware Rally',
+                volume: 'High',
+                insight: 'Semiconductor earnings beat expectations by 15%, signaling sustained demand for AI infrastructure well into Q4, with cloud providers increasing CapEx guidance.',
+                marketCap: '12.4T',
+                peRatio: '32.4',
+                high52: '19,500',
+                low52: '14,200',
+                isFeatured: true,
+                featuredReason: 'Surge in Agentic Search Queries',
+                referralNews: [
+                    { title: "NVIDIA's Next-Gen Blackwell Shipments Begin", source: "Wall Street Journal", url: "#" },
+                    { title: "OpenAI Enters Search Market with SearchGPT", source: "Bloomberg", url: "#" }
+                ]
+            },
+            {
+                sector: 'Energy',
+                indexValue: '4,210',
+                change: -1.2,
+                volatility: 'Medium',
+                driver: 'OPEC+ Supply',
+                volume: 'Med',
+                insight: 'Price correction following inventory surplus report; major producers likely to maintain current output caps to stabilize floor price around $78/barrel.',
+                marketCap: '5.2T',
+                peRatio: '12.1',
+                high52: '4,800',
+                low52: '3,900'
+            },
+            {
+                sector: 'Health',
+                indexValue: '5,890',
+                change: 0.9,
+                volatility: 'Low',
+                driver: 'BioTech M&A',
+                volume: 'Med',
+                insight: 'Defensive rotation into large-cap pharma as investors seek stability amidst rate uncertainty, fueled by rumors of a mega-merger in the oncology space.',
+                marketCap: '8.1T',
+                peRatio: '18.5',
+                high52: '6,200',
+                low52: '5,400'
+            },
+            {
+                sector: 'Finance',
+                indexValue: '34,205',
+                change: 1.5,
+                volatility: 'Medium',
+                driver: 'Yield Curve',
+                volume: 'High',
+                insight: 'Regional banks stabilizing post-stress test results, with net interest margins showing unexpected resilience despite inverted yield curve pressures.',
+                marketCap: '9.8T',
+                peRatio: '14.2',
+                high52: '36,000',
+                low52: '30,500',
+                isFeatured: true,
+                featuredReason: 'Macro Economic Volatility Signal',
+                referralNews: [
+                    { title: "Fed Hints at Rate Pause as Inflation Cools", source: "Financial Times", url: "#" },
+                    { title: "JP Morgan Reports Record Net Interest Income", source: "Reuters", url: "#" }
+                ]
+            },
+            { sector: 'Crypto', indexValue: '68,500', change: -3.4, volatility: 'High', driver: 'Regulatory News', volume: 'High', insight: 'Sharp sell-off triggered by new SEC guidance on staking services; institutional volume remains flat as uncertainty regarding ETF approvals lingers.', marketCap: '2.4T', peRatio: 'N/A', high52: '74,000', low52: '48,000' },
+            { sector: 'Retail', indexValue: '2,450', change: 0.4, volatility: 'Low', driver: 'Consumer Sentiment', volume: 'Low', insight: 'Mixed earnings from big-box retailers suggest consumer spending is shifting heavily towards essentials and discount channels.', marketCap: '3.1T', peRatio: '22.8', high52: '2,800', low52: '2,100' },
+            { sector: 'Real Estate', indexValue: '1,120', change: -0.5, volatility: 'Low', driver: 'Mortgage Rates', volume: 'Low', insight: 'Commercial sector remains under pressure due to refinancing risks in metropolitan office markets, though industrial warehousing demand stays robust.', marketCap: '1.8T', peRatio: '38.2', high52: '1,450', low52: '1,050' },
+            { sector: 'Industrials', indexValue: '9,840', change: 1.8, volatility: 'Medium', driver: 'Infrastructure Bill', volume: 'Med', insight: 'Capital goods orders showing strength driven by federal spending on green manufacturing hubs and defense contract renewals.', marketCap: '4.7T', peRatio: '19.5', high52: '10,200', low52: '8,800' },
+            { sector: 'Utilities', indexValue: '870', change: 0.2, volatility: 'Low', driver: 'Safe Haven', volume: 'Low', insight: 'Flat performance amidst growth sector rally; dividend yields remain attractive for conservative portfolios seeking inflation hedges.', marketCap: '1.5T', peRatio: '16.4', high52: '950', low52: '820' },
         ]);
         setNicheTopics([
-            { topic: 'Solid-State Batteries', signal: 'High', mentions: 1240, growth: '+45%', insight: 'Breakthroughs in energy density are accelerating EV adoption timelines by 2-3 years, prompting major automotive OEMs to re-evaluate supply chain contracts.' },
-            { topic: 'Generative Design', signal: 'Medium', mentions: 850, growth: '+22%', insight: 'Manufacturing sectors are adopting AI design tools to reduce material waste by up to 30%, driving efficiency in aerospace and automotive fabrication.' },
-            { topic: 'Green Hydrogen', signal: 'High', mentions: 980, growth: '+38%', insight: 'Heavy industry subsidies in the EU are driving a Capex boom in electrolysis infrastructure, creating new opportunities for specialized engineering firms.' },
-            { topic: 'Quantum Encryption', signal: 'Low', mentions: 320, growth: '+12%', insight: 'Early-stage pilots in banking sector suggest a coming shift in cybersecurity standards, though widespread commercial viability remains 5+ years out.' },
-            { topic: 'Neuromorphic Chips', signal: 'Medium', mentions: 540, growth: '+28%', insight: 'Edge AI applications are demanding lower latency and power consumption, pushing neuromorphic architecture from research labs to specialized use cases.' },
-            { topic: 'Space Logistics', signal: 'High', mentions: 410, growth: '+65%', insight: 'Private launch costs dropping below $1,500/kg is opening new markets for orbital manufacturing and satellite servicing, attracting significant VC interest.' },
-            { topic: 'Synthetic Biology', signal: 'Medium', mentions: 670, growth: '+31%', insight: 'Precision fermentation technologies are reaching price parity with traditional agriculture in specific high-value protein segments.' },
-            { topic: 'Carbon Capture', signal: 'High', mentions: 1100, growth: '+42%', insight: 'Direct Air Capture (DAC) facilities are securing long-term offtake agreements with major tech firms, validating the business model for scalable carbon removal.' },
-            { topic: 'Legacy Auto', signal: 'Low', mentions: 800, growth: '-15%', insight: 'Traditional auto manufacturers losing market share rapidly.' },
-            { topic: 'Coal Mining', signal: 'Low', mentions: 300, growth: '-22%', insight: 'Regulatory pressure closing mines faster than expected.' },
+            { topic: 'Solid-State Batteries', signal: 'High', mentions: 1240, growth: '+45%', insight: 'Breakthroughs in energy density are accelerating EV adoption timelines by 2-3 years, prompting major automotive OEMs to re-evaluate supply chain contracts.', isFeatured: true, featuredReason: 'High Mentions in Executive Intelligence', referralNews: [{ title: "QuantumScape Achieves 1000Wh/L Density", source: "Nature Energy", url: "#" }, { title: "Toyota Confirms 2027 Production Timeline", source: "Bloomberg", url: "#" }] },
+            { topic: 'Generative Design', signal: 'Medium', mentions: 850, growth: '+22%', insight: 'Manufacturing sectors are adopting AI design tools to reduce material waste by up to 30%, driving efficiency in aerospace and automotive fabrication.', referralNews: [{ title: "Autodesk Generative Engine Pilots in Aerospace", source: "Engineering.com", url: "#" }] },
+            { topic: 'Green Hydrogen', signal: 'High', mentions: 980, growth: '+38%', insight: 'Heavy industry subsidies in the EU are driving a Capex boom in electrolysis infrastructure, creating new opportunities for specialized engineering firms.', referralNews: [{ title: "EU Approves €1.2B Hydrogen Subsidy Package", source: "Reuters", url: "#" }] },
+            { topic: 'Quantum Encryption', signal: 'Low', mentions: 320, growth: '+12%', insight: 'Early-stage pilots in banking sector suggest a coming shift in cybersecurity standards, though widespread commercial viability remains 5+ years out.', referralNews: [{ title: "JP Morgan Tests Post-Quantum Ledger", source: "Financial Times", url: "#" }] },
+            { topic: 'Neuromorphic Chips', signal: 'Medium', mentions: 540, growth: '+28%', insight: 'Edge AI applications are demanding lower latency and power consumption, pushing neuromorphic architecture from research labs to specialized use cases.', referralNews: [{ title: "IBM NorthPole Chip Shows 22x Efficiency", source: "Science", url: "#" }] },
+            { topic: 'Space Logistics', signal: 'High', mentions: 410, growth: '+65%', insight: 'Private launch costs dropping below $1,500/kg is opening new markets for orbital manufacturing and satellite servicing, attracting significant VC interest.', isFeatured: true, featuredReason: 'Exponential Growth', referralNews: [{ title: "Starship Flight 7 Reaches Orbit with Full Payload", source: "SpaceNews", url: "#" }] },
+            { topic: 'Synthetic Biology', signal: 'Medium', mentions: 670, growth: '+31%', insight: 'Precision fermentation technologies are reaching price parity with traditional agriculture in specific high-value protein segments.', referralNews: [{ title: "Lab-Grown Protein Costs Drop 40%", source: "SynBio Beta", url: "#" }] },
+            { topic: 'Carbon Capture', signal: 'High', mentions: 1100, growth: '+42%', insight: 'Direct Air Capture (DAC) facilities are securing long-term offtake agreements with major tech firms, validating the business model for scalable carbon removal.', referralNews: [{ title: "Microsoft Signs Largest CDR Agreement to Date", source: "WSJ", url: "#" }] },
+            { topic: 'Legacy Auto', signal: 'Low', mentions: 800, growth: '-15%', insight: 'Traditional auto manufacturers losing market share rapidly.', referralNews: [{ title: "Legacy OEM Profit Margins Under Pressure", source: "Automotive News", url: "#" }] },
+            { topic: 'Coal Mining', signal: 'Low', mentions: 300, growth: '-22%', insight: 'Regulatory pressure closing mines faster than expected.', referralNews: [{ title: "Global Coal Demand Forecast to Peak by 2026", source: "IEA", url: "#" }] },
         ]);
 
         // If view changes or priority changes, try to fetch new data if cache isn't valid
@@ -266,13 +329,21 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
             {(limit ? sectors.slice(0, limit) : sectors).map((item, idx) => {
                 const isPositive = item.change >= 0;
                 return (
-                    <div key={idx} className="group cursor-pointer">
-                        <GlassCard className="relative hover:-translate-y-1 hover:shadow-2xl h-32 overflow-hidden border border-white/20 dark:border-white/10 bg-white/60 dark:bg-slate-800/40 backdrop-blur-2xl" noPadding>
-                            <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${isPositive ? 'from-emerald-500/10' : 'from-red-500/10'} to-transparent rounded-full blur-2xl -mr-10 -mt-10 transition-opacity`} />
+                    <div key={idx} className="group cursor-pointer" onClick={() => setSelectedSector(item)}>
+                        <GlassCard className={`relative hover:-translate-y-1 hover:shadow-2xl h-36 overflow-hidden border backdrop-blur-3xl ${item.isFeatured ? 'border-blue-500/40 bg-blue-500/5' : 'border-white/20 dark:border-white/10 bg-white/60 dark:bg-slate-800/40'}`} noPadding>
+                            <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${isPositive ? 'from-emerald-500/10' : 'from-red-500/10'} to-transparent rounded-full blur-2xl -mr-10 -mt-10 transition-opacity uppercase`} />
+
+                            {/* Featured Badge */}
+                            {item.isFeatured && (
+                                <div className="absolute top-0 left-0 px-3 py-1 bg-blue-600 text-[9px] font-bold text-white rounded-br-xl z-20 flex items-center gap-1 animate-pulse-soft">
+                                    <Sparkles className="w-2.5 h-2.5" /> FEATURED
+                                </div>
+                            )}
+
                             <div className="p-5 h-full flex flex-col justify-between relative z-10">
                                 <div className="flex justify-between items-start">
                                     <div className="flex flex-col">
-                                        <span className="font-bold text-sm text-gray-700 dark:text-gray-200 tracking-tight">{item.sector}</span>
+                                        <span className="font-bold text-sm text-gray-700 dark:text-gray-200 tracking-tight uppercase">{item.sector}</span>
                                         <span className="text-[10px] font-mono text-gray-400 dark:text-gray-500 uppercase tracking-wider mt-0.5">{item.indexValue || '4,200'}</span>
                                     </div>
                                     <div className={`flex items-center gap-1 px-2 py-1 rounded-lg border backdrop-blur-md ${isPositive ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400'}`}>
@@ -282,17 +353,26 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
                                 </div>
                                 <div className="flex justify-between items-end mt-auto">
                                     <div className="flex items-center gap-1">
-                                        <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mr-1">Vol</span>
+                                        <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mr-1">RAG AI Confidence</span>
                                         <div className="flex gap-0.5 items-end h-3">
-                                            <div className={`w-1 rounded-sm ${item.volume === 'Low' || item.volume === 'Med' || item.volume === 'High' ? 'bg-gray-400 h-1.5' : 'bg-gray-200 h-1.5'}`}></div>
-                                            <div className={`w-1 rounded-sm ${item.volume === 'Med' || item.volume === 'High' ? 'bg-gray-400 h-2' : 'bg-gray-200 h-1.5'}`}></div>
-                                            <div className={`w-1 rounded-sm ${item.volume === 'High' ? 'bg-gray-400 h-3' : 'bg-gray-200 h-1.5'}`}></div>
+                                            <div className="w-1 rounded-sm bg-blue-500 h-1.5"></div>
+                                            <div className="w-1 rounded-sm bg-blue-500 h-2"></div>
+                                            <div className="w-1 rounded-sm bg-blue-500/30 h-3"></div>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="absolute inset-0 bg-white/95 dark:bg-[#1C1C1E]/95 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-center px-6">
-                                    <p className="text-[10px] text-gray-400 uppercase font-bold mb-1 tracking-widest">Key Driver</p>
-                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-200 leading-snug">{item.driver}</p>
+                                    {item.isFeatured ? (
+                                        <>
+                                            <p className="text-[10px] text-blue-500 uppercase font-bold mb-1 tracking-widest">Why Featured?</p>
+                                            <p className="text-sm font-medium text-gray-900 dark:text-gray-200 leading-snug">{item.featuredReason}</p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <p className="text-[10px] text-gray-400 uppercase font-bold mb-1 tracking-widest">Key Driver</p>
+                                            <p className="text-sm font-medium text-gray-900 dark:text-gray-200 leading-snug">{item.driver}</p>
+                                        </>
+                                    )}
                                     <div className="mt-3 flex items-center justify-between">
                                         <span className={`text-[9px] px-2 py-0.5 rounded-full border ${item.volatility === 'High' ? 'border-red-500/30 text-red-500' : 'border-gray-500/30 text-gray-500'}`}>
                                             {item.volatility} VOL
@@ -377,12 +457,39 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
 
                     {/* Body - Simplified */}
                     <div className="p-6 overflow-y-auto custom-scrollbar space-y-6">
+                        {/* Executive Data Terminal - Bloomberg Style */}
+                        <div className="grid grid-cols-2 gap-4 mb-2">
+                            <div className="p-4 bg-black/5 dark:bg-white/5 rounded-xl border border-white/10">
+                                <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1 block">YTD Growth (2026)</span>
+                                <p className="text-lg font-bold text-emerald-500">{topic.growth}</p>
+                                <p className="text-[9px] text-gray-400 italic">Source: Nasdaq Analytics</p>
+                            </div>
+                            <div className="p-4 bg-black/5 dark:bg-white/5 rounded-xl border border-white/10">
+                                <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1 block">Sentiment Velocity</span>
+                                <p className="text-lg font-bold text-blue-500 font-mono">92/100</p>
+                                <p className="text-[9px] text-gray-400 italic">Institutional Monitoring</p>
+                            </div>
+                        </div>
+
                         {/* Section 1: Executive Insight - Shorter */}
                         <div>
-                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                <Sparkles className="w-4 h-4 text-blue-500" /> Brief
-                            </h3>
-                            <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed p-3 bg-blue-50/50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-500/20">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                                    <Sparkles className="w-4 h-4 text-iosBlue" /> Strategic Briefing
+                                </h3>
+                                <button
+                                    onClick={() => {
+                                        const subject = `Niche Topic Analysis: ${topic.topic}`;
+                                        const body = `Topic: ${topic.topic}\nGrowth: ${topic.growth}\nInsight: ${topic.insight}\n\nGenerated via AI Business Suite (Executive Edition)`;
+                                        window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+                                    }}
+                                    className="p-1.5 hover:bg-iosBlue/10 rounded-lg text-iosBlue transition-all flex items-center gap-1 text-[10px] font-bold border border-iosBlue/20"
+                                >
+                                    <Share2 className="w-3.5 h-3.5" /> SHARE
+                                </button>
+                            </div>
+                            <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed p-5 bg-iosBlue/5 rounded-2xl border border-iosBlue/10 relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-1 h-full bg-iosBlue"></div>
                                 {topic.insight}
                             </p>
                         </div>
@@ -411,6 +518,31 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
                                 </AreaChart>
                             </ResponsiveContainer>
                         </div>
+
+                        {/* Grounding Intelligence Section - NEW */}
+                        {topic.referralNews && topic.referralNews.length > 0 && (
+                            <div className="pt-4 border-t border-gray-100 dark:border-white/5">
+                                <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                    <Newspaper className="w-4 h-4 text-iosBlue" /> Grounding Intelligence
+                                </h3>
+                                <div className="grid grid-cols-1 gap-3">
+                                    {topic.referralNews.map((news, i) => (
+                                        <a key={i} href={news.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-xl hover:border-blue-500/30 transition-all group overflow-hidden">
+                                            <div className="w-8 h-8 rounded-lg bg-white dark:bg-[#1C1C1E] border border-gray-100 dark:border-white/10 flex items-center justify-center shrink-0 shadow-sm">
+                                                <Globe className="w-4 h-4 text-iosBlue" />
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex justify-between items-center mb-0.5">
+                                                    <span className="text-[9px] font-bold text-iosBlue uppercase tracking-wider">{news.source}</span>
+                                                    <ExternalLink className="w-2.5 h-2.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-all" />
+                                                </div>
+                                                <h4 className="text-xs font-bold text-gray-900 dark:text-white leading-tight truncate">{news.title}</h4>
+                                            </div>
+                                        </a>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -419,12 +551,134 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
         return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : null;
     };
 
+    const SectorDetailModal = ({ sector, onClose }: { sector: EnrichedHeatmapItem; onClose: () => void }) => {
+        const modalContent = (
+            <div className="fixed inset-0 z-[100] flex items-center justify-end">
+                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={onClose} />
+                <div className="relative w-full max-w-lg h-full bg-white dark:bg-[#1C1C1E] border-l border-gray-200 dark:border-white/10 shadow-2xl animate-fade-in flex flex-col glass-liquid">
+                    {/* Header */}
+                    <div className="p-6 border-b border-gray-100 dark:border-white/5 flex justify-between items-start bg-gray-50/50 dark:bg-white/5 backdrop-blur-3xl">
+                        <div>
+                            <div className="flex items-center gap-3 mb-1">
+                                <h2 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tighter">{sector.sector}</h2>
+                                <span className={`px-2 py-0.5 text-[10px] font-bold rounded ${sector.change >= 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>
+                                    {sector.change >= 0 ? '+' : ''}{sector.change}%
+                                </span>
+                            </div>
+                            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Standard & Poor's Sector Intelligence</p>
+                        </div>
+                        <button onClick={onClose} className="p-2 hover:bg-gray-200 dark:hover:bg-white/10 rounded-full transition-colors duration-75">
+                            <X className="w-5 h-5 text-gray-500" />
+                        </button>
+                    </div>
+
+                    {/* Scrollable Content */}
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
+                        {/* Bloomberg Terminal Style Metrics Bar */}
+                        <div className="grid grid-cols-2 gap-px bg-gray-200 dark:bg-white/10 rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 shadow-lg">
+                            <div className="bg-white dark:bg-[#151516] p-4">
+                                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1 block">Velocity Score</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xl font-mono font-bold text-gray-900 dark:text-white">84.2</span>
+                                    <div className="flex gap-0.5">
+                                        <div className="w-1 h-3 bg-blue-500 rounded-full"></div>
+                                        <div className="w-1 h-4 bg-blue-500 rounded-full"></div>
+                                        <div className="w-1 h-2 bg-blue-500 rounded-full"></div>
+                                    </div>
+                                </div>
+                                <p className="text-[9px] text-gray-400 mt-1 uppercase">Accelerating vs Prev. Month</p>
+                            </div>
+                            <div className="bg-white dark:bg-[#151516] p-4">
+                                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1 block">Nasdaq/Gartner Rating</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xl font-bold text-iosBlue">OVERWEIGHT</span>
+                                    <ShieldCheck className="w-4 h-4 text-iosBlue" />
+                                </div>
+                                <p className="text-[9px] text-gray-400 mt-1 uppercase">Target: +12.5% Upside</p>
+                            </div>
+                        </div>
+
+                        {/* Intelligence Insight */}
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                    <BrainCircuit className="w-4 h-4 text-iosBlue" /> Executive Analysis (Feb 2026)
+                                </h3>
+                                <button
+                                    onClick={() => {
+                                        const subject = `Market Intelligence Report: ${sector.sector}`;
+                                        const body = `Sector: ${sector.sector}\nAnalysis: ${sector.insight}\nDriver: ${sector.driver}\nTarget Market Cap: ${sector.marketCap}\n\nGenerated via AI Business Suite (Executive Edition)`;
+                                        window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+                                    }}
+                                    className="p-2 hover:bg-iosBlue/10 rounded-lg text-iosBlue transition-all flex items-center gap-1.5 text-[10px] font-bold border border-iosBlue/20"
+                                >
+                                    <Share2 className="w-3.5 h-3.5" /> SHARE VIA EMAIL
+                                </button>
+                            </div>
+                            <div className="p-6 bg-iosBlue/5 border border-iosBlue/10 rounded-2xl relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-1 h-full bg-iosBlue"></div>
+                                <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed font-medium mb-4">
+                                    "{sector.insight}"
+                                </p>
+                                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-iosBlue/10">
+                                    <div>
+                                        <span className="text-[9px] text-gray-500 font-bold uppercase block mb-1">Catalyst Logic</span>
+                                        <p className="text-xs text-gray-900 dark:text-gray-100 font-bold">{sector.driver}</p>
+                                    </div>
+                                    <div>
+                                        <span className="text-[9px] text-gray-500 font-bold uppercase block mb-1">Velocity Rationale</span>
+                                        <p className="text-xs text-gray-900 dark:text-gray-100 font-light italic">Driven by institutional rotation and Jan 26 macro shifts.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Referral News Section - NEW */}
+                        {sector.referralNews && sector.referralNews.length > 0 && (
+                            <div>
+                                <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                    <TrendingUp className="w-4 h-4 text-emerald-500" /> Referral Intelligence
+                                </h3>
+                                <div className="space-y-3">
+                                    {sector.referralNews.map((news, i) => (
+                                        <a key={i} href={news.url} className="block p-4 bg-white/40 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-xl hover:border-blue-500/30 transition-all group">
+                                            <div className="flex justify-between items-start mb-1">
+                                                <span className="text-[9px] font-bold text-blue-500 uppercase tracking-wider">{news.source}</span>
+                                                <ArrowUpRight className="w-3 h-3 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                                            </div>
+                                            <h4 className="text-xs font-bold text-gray-900 dark:text-white leading-snug">{news.title}</h4>
+                                        </a>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Footer Action */}
+                    <div className="p-6 border-t border-gray-100 dark:border-white/5">
+                        <LiquidGlassButton className="w-full py-4 text-xs font-bold flex items-center justify-center gap-2 group" onClick={() => handleSend(`Can you provide a deep dive analysis on the ${sector.sector} sector's recent ${sector.driver}?`)}>
+                            <Sparkles className="w-4 h-4" /> Initialize Tactical Deep-Dive
+                        </LiquidGlassButton>
+                    </div>
+                </div>
+            </div>
+        );
+        return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : null;
+    };
+
     const NicheComponent = () => (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {nicheTopics.map((item, idx) => (
                 <div key={idx} onClick={() => setSelectedNiche(item)} className="cursor-pointer group">
-                    <GlassCard className="h-full p-6 bg-white/60 dark:bg-slate-800/40 backdrop-blur-xl border border-white/20 dark:border-white/10 hover:border-blue-500/30 hover:shadow-xl transition-all relative overflow-hidden" noPadding>
+                    <GlassCard className={`h-full p-6 bg-white/60 dark:bg-slate-800/40 backdrop-blur-xl border ${item.isFeatured ? 'border-blue-500/40 bg-blue-500/5 shadow-blue-500/10' : 'border-white/20 dark:border-white/10'} hover:border-blue-500/30 hover:shadow-xl transition-all relative overflow-hidden`} noPadding>
                         <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${item.signal === 'High' ? 'from-emerald-500/10' : item.signal === 'Medium' ? 'from-blue-500/10' : 'from-gray-500/10'} to-transparent rounded-full blur-2xl -mr-8 -mt-8`} />
+
+                        {/* Featured Badge */}
+                        {item.isFeatured && (
+                            <div className="absolute top-0 left-0 px-2 py-0.5 bg-blue-600 text-[8px] font-bold text-white rounded-br-lg z-20 flex items-center gap-1">
+                                <Sparkles className="w-2 h-2" /> RAG FEATURED
+                            </div>
+                        )}
 
                         <div className="relative z-10 flex flex-col h-full">
                             <div className="flex justify-between items-start mb-3">
@@ -435,9 +689,16 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
                             </div>
 
                             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 leading-tight group-hover:text-blue-500 transition-colors duration-75">{item.topic}</h3>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-3 leading-relaxed mb-4 flex-1">{item.insight}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-3 leading-relaxed mb-4 flex-1">
+                                {item.isFeatured ? (
+                                    <span className="flex flex-col gap-1">
+                                        <span className="text-blue-500 font-bold uppercase text-[9px] tracking-widest">High Impact Insight</span>
+                                        {item.insight}
+                                    </span>
+                                ) : item.insight}
+                            </p>
 
-                            <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-white/5 mt-auto">
+                            <div className="flex items-center justify-between pt-2 mt-auto">
                                 <div className="flex items-center gap-1.5 text-gray-400">
                                     <Activity className="w-3.5 h-3.5" />
                                     <span className="text-[10px] font-medium uppercase tracking-wider">{item.mentions} Mentions</span>
@@ -879,8 +1140,9 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
                     <SourcesFooter />
                 </div>
 
-                {/* Detail Modal */}
+                {/* Portal Modals */}
                 {selectedNiche && <NicheDetailModal topic={selectedNiche} onClose={() => setSelectedNiche(null)} />}
+                {selectedSector && <SectorDetailModal sector={selectedSector} onClose={() => setSelectedSector(null)} />}
             </div>
         );
     }
@@ -896,12 +1158,9 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
                     </button>
                 </div>
 
-                {/* Radar View Container - grows with content so nothing is cropped */}
                 <GlassCard className="w-full flex flex-col bg-white/60 dark:bg-slate-800/40 backdrop-blur-2xl border border-white/20 dark:border-white/10 relative mb-4" noPadding>
                     <div className="p-8">
                         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 min-h-[850px]">
-
-                            {/* Left Column: Large Hero Radar Chart (Gartner Style Central Piece) */}
                             <div className="xl:col-span-8 flex flex-col min-h-[650px]">
                                 <div className="flex-1 min-h-[600px] bg-white/40 dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/5 relative p-4 flex items-center justify-center">
                                     <div className="absolute top-4 left-4 z-10">
@@ -912,16 +1171,12 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
                                 </div>
                             </div>
 
-                            {/* Right Column: Stacked Metrics & Takeaways */}
                             <div className="xl:col-span-4 flex flex-col gap-6 pr-1">
-
-                                {/* 1. KPIs Stack */}
                                 <div className="flex-none">
                                     <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-3">Key Performance Indicators</h4>
                                     <StackedCompetitiveMetrics />
                                 </div>
 
-                                {/* 2. Strategic Takeaways */}
                                 <div className="flex-none space-y-3">
                                     <div className="flex items-center gap-2 mb-1">
                                         <Target className="w-4 h-4 text-blue-500" />
@@ -940,9 +1195,7 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
                             </div>
                         </div>
 
-                        {/* Bottom Row: Deep Dive Intelligence Feed */}
                         <CompetitorNewsFeed />
-
                         <div className="mt-12">
                             <SourcesFooter />
                         </div>
@@ -954,14 +1207,11 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
 
     if (view === 'market_chat') {
         return (
-            // Increased height from 75vh to 85vh to push input further down
             <div className="h-[85vh] min-h-[650px] flex flex-col space-y-6 pb-6 w-full max-w-5xl mx-auto">
                 <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Predictive Engine</h2>
-                {/* GlassCard should take full remaining height and handle layout */}
                 <GlassCard className="flex-1 flex flex-col h-full bg-white/60 dark:bg-slate-800/40 backdrop-blur-2xl border border-white/20 dark:border-white/10 overflow-hidden relative" noPadding>
                     <div className="p-4 border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 shrink-0">
                         <div className="flex items-center gap-2">
-                            {/* Monochrome Icon - Glassy */}
                             <div className="p-1.5 bg-gray-200 dark:bg-white/10 rounded-lg text-gray-700 dark:text-white">
                                 <BrainCircuit className="w-4 h-4" />
                             </div>
@@ -970,12 +1220,11 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Ask about correlations, forecasts, or specific data points.</p>
                     </div>
                     <div className="flex-1 relative overflow-hidden flex flex-col">
-                        {/* Chat Component takes full height now */}
                         <ChatComponent />
                     </div>
                 </GlassCard>
             </div>
-        )
+        );
     }
 
     return (
@@ -1001,7 +1250,6 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
                 <SourcesFooter />
             </div>
             <div className="w-full lg:w-[380px] flex flex-col h-full lg:h-full shrink-0">
-                {/* Added flex-1 to ensure widget takes full height for chat component to anchor bottom */}
                 <GlassCard className="flex-1 flex flex-col h-full overflow-hidden relative !bg-slate-800/95 border border-white/10 shadow-sm shadow-blue-900/20" noPadding>
                     <div className="p-4 border-b border-white/10 bg-white/5 shrink-0">
                         <div className="flex items-center gap-2">

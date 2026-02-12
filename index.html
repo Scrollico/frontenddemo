@@ -64,33 +64,40 @@
       overflow: hidden;
     }
 
-    /* Dark mode override - User Requested Color */
+    /* Dark mode override - Executive Dark Mode Alignment */
     .dark body {
-      background-color: #374151;
-      color: #F3F4F6;
+      background-color: #0F172A;
+      /* Deep slate baseline */
+      background-image: radial-gradient(circle at 50% -20%, #1E293B, #0F172A);
+      color: #F8FAFC;
     }
 
-    /* Enhanced Glass Panel */
+    /* Enhanced Glass Panel - Executive Variant */
     .glass-panel {
-      background: rgba(30, 30, 30, 0.4);
-      backdrop-filter: blur(40px);
-      -webkit-backdrop-filter: blur(40px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.2);
     }
 
     .glass-panel-light {
       background: rgba(255, 255, 255, 0.7);
-      backdrop-filter: blur(40px);
-      -webkit-backdrop-filter: blur(40px);
-      border: 1px solid rgba(255, 255, 255, 0.4);
-      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.05);
+    }
+
+    /* Apple-style smooth rounding utilities */
+    .rounded-executive {
+      border-radius: 14px;
     }
 
     @keyframes fade-in {
       from {
         opacity: 0;
-        transform: translateY(10px);
+        transform: translateY(8px);
       }
 
       to {
@@ -100,9 +107,10 @@
     }
 
     .animate-fade-in {
-      animation: fade-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+      animation: fade-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
     }
 
+    /* ... existing animations ... */
     @keyframes float {
 
       0%,
@@ -111,12 +119,12 @@
       }
 
       50% {
-        transform: translateY(-10px);
+        transform: translateY(-8px);
       }
     }
 
     .animate-float {
-      animation: float 6s ease-in-out infinite;
+      animation: float 5s ease-in-out infinite;
     }
 
     @keyframes pulse-soft {
@@ -128,8 +136,8 @@
       }
 
       50% {
-        opacity: 0.2;
-        transform: scale(1.05);
+        opacity: 0.15;
+        transform: scale(1.02);
       }
     }
 
@@ -145,12 +153,40 @@
       }
 
       50% {
-        transform: scale(1.06);
+        transform: scale(1.04);
       }
     }
 
     .animate-icon-breathe {
       animation: icon-breathe 2.5s ease-in-out infinite;
+    }
+
+    @keyframes spin-slow {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .animate-spin-slow {
+      animation: spin-slow 20s linear infinite;
+    }
+
+    @keyframes spin-slow-reverse {
+      from {
+        transform: rotate(360deg);
+      }
+
+      to {
+        transform: rotate(0deg);
+      }
+    }
+
+    .animate-spin-slow-reverse {
+      animation: spin-slow-reverse 25s linear infinite;
     }
   </style>
   <script>
@@ -159,13 +195,21 @@
       theme: {
         extend: {
           colors: {
-            executiveGray: '#374151',
-            glass: 'rgba(255, 255, 255, 0.05)',
-            neonMint: '#00FF9D',
-            iosBlue: '#0A84FF',
+            executive: {
+              DEFAULT: '#0F172A',
+              card: '#1E293B',
+              border: 'rgba(255, 255, 255, 0.08)',
+            },
+            iosBlue: '#007AFF',
+            iosGlow: 'rgba(0, 122, 255, 0.3)',
+          },
+          borderRadius: {
+            'xl': '12px',
+            '2xl': '16px', // Reduced from default 24px style if needed
+            '3xl': '24px',
           },
           fontFamily: {
-            sans: ['Inter', 'sans-serif'],
+            sans: ['Inter', 'apple-system', 'BlinkMacSystemFont', 'sans-serif'],
           },
           transitionTimingFunction: {
             'smooth': 'cubic-bezier(0.2, 0.8, 0.2, 1)',

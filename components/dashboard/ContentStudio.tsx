@@ -58,15 +58,21 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
                 />
             </div>
 
+        </div>
+
+        <div className="pt-6 mt-auto border-t border-gray-100 dark:border-white/5 space-y-6">
             {view !== 'content_infographics' && (
-                <div className="space-y-3">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block">Executive Tone</label>
+                <div className="space-y-3 px-1">
+                    <div className="flex items-center justify-between">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Executive Tone</label>
+                        <span className="text-[10px] font-medium text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded uppercase tracking-tighter">AI Adaptive</span>
+                    </div>
                     <div className="grid grid-cols-2 gap-2">
                         {['Visionary', 'Pragmatic', 'Contrarian', 'Empathetic'].map((t) => (
                             <button
                                 key={t}
                                 onClick={() => setTone(t)}
-                                className={`px-3 py-2 rounded-lg text-xs font-medium border transition-all ${tone === t ? 'bg-gray-900 text-white border-gray-900 dark:bg-white dark:text-black' : 'bg-transparent text-gray-500 border-gray-200 dark:border-white/10 hover:border-gray-400'}`}
+                                className={`px-3 py-2.5 rounded-xl text-xs font-bold border transition-all ${tone === t ? 'bg-gray-900 text-white border-gray-900 dark:bg-white dark:text-black shadow-lg shadow-blue-500/10' : 'bg-gray-50 dark:bg-white/5 text-gray-500 border-gray-100 dark:border-white/5 hover:border-gray-300 dark:hover:border-white/20'}`}
                             >
                                 {t}
                             </button>
@@ -74,9 +80,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
                     </div>
                 </div>
             )}
-        </div>
 
-        <div className="pt-6 mt-auto border-t border-gray-100 dark:border-white/5">
             <button
                 onClick={handleGenerate}
                 disabled={!topic || isGenerating}
@@ -85,7 +89,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
                     ${isGenerating ? 'opacity-70 cursor-wait' : ''}`}
             >
                 {/* Shine effect */}
-                <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-[1200ms] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
                 {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5 fill-current" />}
                 {isGenerating ? 'Synthesizing...' : 'Generate Asset'}

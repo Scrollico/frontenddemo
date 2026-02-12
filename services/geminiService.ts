@@ -7,11 +7,11 @@ const getAI = () => {
   if (!aiClient) {
     // Robust checks for different environment variable injection methods
     let apiKey = '';
-    
+
     // Check 1: process.env (Injected by Vite Define)
     if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
       apiKey = process.env.API_KEY;
-    } 
+    }
     // Check 2: import.meta.env (Standard Vite)
     else if (import.meta.env && import.meta.env.VITE_GEMINI_API_KEY) {
       apiKey = import.meta.env.VITE_GEMINI_API_KEY;
@@ -27,10 +27,10 @@ const getAI = () => {
       console.log("Debug: process.env.API_KEY:", typeof process !== 'undefined' && process.env ? process.env.API_KEY : 'undefined');
       console.log("Debug: import.meta.env.VITE_GEMINI_API_KEY:", import.meta.env ? import.meta.env.VITE_GEMINI_API_KEY : 'undefined');
     } else {
-       // Key found
-       console.log("AI Business Suite: AI Initialized successfully.");
+      // Key found
+      console.log("AI Business Suite: AI Initialized successfully.");
     }
-    
+
     aiClient = new GoogleGenAI({ apiKey: apiKey });
   }
   return aiClient;
@@ -44,23 +44,23 @@ let marketSignalsCache: { data: any, groundingMetadata: any, focusKey: string } 
 
 // Helper to get current context for Content Studio
 export const getGlobalContext = () => {
-    let context = "Context: ";
-    if (dailyBriefingCache) {
-        context += `\nLATEST NEWS SUMMARY:\n${dailyBriefingCache.content.substring(0, 1000)}...`;
-    }
-    if (marketSignalsCache) {
-        context += `\nMARKET DATA:\n${JSON.stringify(marketSignalsCache.data.sectors.slice(0, 5))}`;
-    }
-    return context;
+  let context = "Context: ";
+  if (dailyBriefingCache) {
+    context += `\nLATEST NEWS SUMMARY:\n${dailyBriefingCache.content.substring(0, 1000)}...`;
+  }
+  if (marketSignalsCache) {
+    context += `\nMARKET DATA:\n${JSON.stringify(marketSignalsCache.data.sectors.slice(0, 5))}`;
+  }
+  return context;
 };
 
 // --- MOCK DATA FOR FALLBACKS (Rate Limit Handling) ---
 
-const MOCK_BRIEFING = `## ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} : Global Markets Rally on Tech Optimism
-**Spot:** *Resilience in semiconductor supply chains drives investor confidence despite lingering inflation concerns.*
+const MOCK_BRIEFING = `## February 12, 2026 : Global Markets Rally on Tech Optimism
+**Spot:** *Resilience in semiconductor supply chains drives investor confidence despite lingering inflation concerns in early 2026.*
 
 ### 1. Executive Summary
-Global equities are trading higher today, led by a 2.3% surge in the technology sector following robust earnings from key semiconductor players. North American markets opened strong, while Asian indices closed mixed due to localized regulatory updates. The immediate outlook suggests cautious optimism as traders await the Federal Reserve's minutes.
+Global equities are trading higher in Q1 2026, led by a 2.3% surge in the technology sector following robust earnings from key semiconductor players. North American markets opened strong, while Asian indices closed mixed due to localized regulatory updates. The immediate outlook suggests cautious optimism as traders await the Federal Reserve's minutes.
 
 ### 2. Top 3 Developments
 **1. MegaChip Corp Announces Breakthrough Processor**
@@ -101,30 +101,37 @@ const MOCK_MARKET_DATA = {
     { sector: 'Utilities', change: 0.2, volatility: 'Low', driver: 'Safe Haven', volume: 'Low', insight: 'Flat performance amidst growth sector rally; dividend yields remain attractive for conservative portfolios seeking inflation hedges.' },
   ],
   nicheTopics: [
-    { topic: 'Solid-State Batteries', signal: 'High', mentions: 1240, growth: '+45%', insight: 'Breakthroughs in energy density are accelerating EV adoption timelines by 2-3 years.' },
-    { topic: 'Generative Design', signal: 'Medium', mentions: 850, growth: '+22%', insight: 'Manufacturing sectors are adopting AI design tools to reduce material waste by up to 30%.' },
-    { topic: 'Green Hydrogen', signal: 'High', mentions: 980, growth: '+38%', insight: 'Heavy industry subsidies in the EU are driving a Capex boom in electrolysis infrastructure.' },
-    { topic: 'Space Logistics', signal: 'High', mentions: 410, growth: '+65%', insight: 'Private launch costs dropping below $1,500/kg is opening new markets for orbital manufacturing.' },
+    { topic: 'Solid-State Batteries', signal: 'High', mentions: 1240, growth: '+45%', insight: 'Breakthroughs in energy density are accelerating EV adoption timelines by 2-3 years, prompting major automotive OEMs to re-evaluate supply chain contracts.', isFeatured: true, featuredReason: 'High Mentions in Executive Intelligence', referralNews: [{ title: "QuantumScape Achieves 1000Wh/L Density", source: "Nature Energy", url: "#" }, { title: "Toyota Confirms 2027 Production Timeline", source: "Bloomberg", url: "#" }] },
+    { topic: 'Generative Design', signal: 'Medium', mentions: 850, growth: '+22%', insight: 'Manufacturing sectors are adopting AI design tools to reduce material waste by up to 30%, driving efficiency in aerospace and automotive fabrication.', referralNews: [{ title: "Autodesk Generative Engine Pilots in Aerospace", source: "Engineering.com", url: "#" }] },
+    { topic: 'Green Hydrogen', signal: 'High', mentions: 980, growth: '+38%', insight: 'Heavy industry subsidies in the EU are driving a Capex boom in electrolysis infrastructure, creating new opportunities for specialized engineering firms.', referralNews: [{ title: "EU Approves €1.2B Hydrogen Subsidy Package", source: "Reuters", url: "#" }] },
+    { topic: 'Quantum Encryption', signal: 'Low', mentions: 320, growth: '+12%', insight: 'Early-stage pilots in banking sector suggest a coming shift in cybersecurity standards, though widespread commercial viability remains 5+ years out.', referralNews: [{ title: "JP Morgan Tests Post-Quantum Ledger", source: "Financial Times", url: "#" }] }
   ]
 };
 
 export const generateDailyBriefing = async (sectors: string[], region: string, forceRefresh: boolean = false): Promise<{ content: string, groundingMetadata: any } | null> => {
   const sectorsKey = sectors.sort().join(',');
-  
+
   // Return cached data if available and not forcing refresh
   if (dailyBriefingCache && !forceRefresh) {
-      return dailyBriefingCache;
+    return dailyBriefingCache;
   }
-  
+
   // If no cache and not forcing refresh, use mock data immediately (token saving)
   if (!dailyBriefingCache && !forceRefresh) {
-      const fallback = {
-          content: MOCK_BRIEFING,
-          groundingMetadata: null,
-          sectorsKey
-      };
-      dailyBriefingCache = fallback;
-      return fallback;
+    const fallback = {
+      content: MOCK_BRIEFING,
+      groundingMetadata: {
+        groundingChunks: [
+          { web: { title: "NVIDIA Blackwell Shipments Accelerate", uri: "https://www.bloomberg.com/news/articles/2026-02-10/nvidia-blackwell-shipments" } },
+          { web: { title: "Fed Hints at Q1 Rate Stability", uri: "https://www.wsj.com/articles/fed-rate-stability-2026" } },
+          { web: { title: "Global Tech CapEx Forecast 2026", uri: "https://www.reuters.com/business/tech/global-capex-forecast-2026" } },
+          { web: { title: "Semiconductor Market Dynamics in Q1", uri: "https://www.ft.com/content/semi-dynamics-2026" } }
+        ]
+      },
+      sectorsKey
+    };
+    dailyBriefingCache = fallback;
+    return fallback;
   }
 
   const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -132,7 +139,10 @@ export const generateDailyBriefing = async (sectors: string[], region: string, f
 
   const prompt = `
 # Role & Objective
-You are the **Business Intelligence News Editor for AI Business Suite**. Your task is to aggregate today’s raw business news, filter for high-impact market signals with a specific focus on **${sectorsStr}**, and synthesize a prestigious, "Executive Daily" digest.
+You are the **Executive Intelligence Editor for Scrolli (v1.2 Platform)**. Your goal is to synthesize high-impact market signals for February 2026, focusing on **${sectorsStr}**. Your tone must be analytical, prestigious, and forward-looking.
+
+# Context
+The current date is **February 12, 2026**. All news and analysis must reflect the January/February 2026 period.
 
 # Formatting Constraints (STRICT)
 - **DO NOT** use asterisks (**) or double asterisks for bolding or lists. 
@@ -185,15 +195,15 @@ You are the **Business Intelligence News Editor for AI Business Suite**. Your ta
       groundingMetadata: response.candidates?.[0]?.groundingMetadata,
       sectorsKey
     };
-    
+
     dailyBriefingCache = result;
     return result;
   } catch (error) {
     console.error("Gemini Generation Error:", error);
     const fallback = {
-        content: MOCK_BRIEFING,
-        groundingMetadata: null,
-        sectorsKey
+      content: MOCK_BRIEFING,
+      groundingMetadata: null,
+      sectorsKey
     };
     dailyBriefingCache = fallback;
     return fallback;
@@ -202,7 +212,7 @@ You are the **Business Intelligence News Editor for AI Business Suite**. Your ta
 
 export const generateExecutiveContent = async (type: 'linkedin' | 'talking-points', topic: string, tone: string, context?: string): Promise<string> => {
   let systemInstruction = "";
-  
+
   if (type === 'linkedin') {
     systemInstruction = `
       You are an expert executive ghostwriter creating a high-impact LinkedIn post.
@@ -292,7 +302,7 @@ export const generatePresentationSlides = async (topic: string, tone: string, co
       model: 'gemini-2.5-flash',
       contents: prompt
     });
-    
+
     let text = response.text || "[]";
     text = text.replace(/```json/g, '').replace(/```/g, '').trim();
     return JSON.parse(text);
@@ -326,7 +336,7 @@ export const generateInfographicData = async (topic: string): Promise<any> => {
       model: 'gemini-2.5-flash',
       contents: prompt
     });
-    
+
     let text = response.text || "{}";
     text = text.replace(/```json/g, '').replace(/```/g, '').trim();
     return JSON.parse(text);
@@ -341,16 +351,21 @@ export const generateMarketSignals = async (focus: string = "Global", forceRefre
   if (marketSignalsCache && !forceRefresh) {
     return marketSignalsCache;
   }
-  
+
   // If no cache and not forcing refresh, use mock data immediately (token saving)
   if (!marketSignalsCache && !forceRefresh) {
-      const fallback = {
-         data: MOCK_MARKET_DATA,
-         groundingMetadata: null,
-         focusKey: focus
-      };
-      marketSignalsCache = fallback;
-      return fallback;
+    const fallback = {
+      data: MOCK_MARKET_DATA,
+      groundingMetadata: {
+        groundingChunks: [
+          { web: { title: "Nasdaq 100 Early 2026 Performance", uri: "https://www.nasdaq.com/market-indices/ndx" } },
+          { web: { title: "Gartner Predicts 15% Growth in Enterprise AI", uri: "https://www.gartner.com/en/newsroom/press-releases/2026-growth" } }
+        ]
+      },
+      focusKey: focus
+    };
+    marketSignalsCache = fallback;
+    return fallback;
   }
 
   const prompt = `
@@ -383,23 +398,23 @@ export const generateMarketSignals = async (focus: string = "Global", forceRefre
 
     let jsonString = response.text || "{}";
     jsonString = jsonString.replace(/```json/g, '').replace(/```/g, '').trim();
-    
+
     const data = JSON.parse(jsonString);
     const result = {
       data: data,
       groundingMetadata: response.candidates?.[0]?.groundingMetadata,
       focusKey: focus
     };
-    
+
     marketSignalsCache = result;
     return result;
 
   } catch (error) {
     console.error("Market Signals Error:", error);
     const fallback = {
-       data: MOCK_MARKET_DATA,
-       groundingMetadata: null,
-       focusKey: focus
+      data: MOCK_MARKET_DATA,
+      groundingMetadata: null,
+      focusKey: focus
     };
     marketSignalsCache = fallback;
     return fallback;
@@ -408,7 +423,7 @@ export const generateMarketSignals = async (focus: string = "Global", forceRefre
 
 export const generateCompetitorAnalysis = async (userCompany: string, competitors: string[]): Promise<{ radarData: any[], takeaways: any[], groundingMetadata: any }> => {
   const competitorList = competitors.length > 0 ? competitors.join(", ") : "Main Industry Competitors";
-  
+
   const prompt = `
     Analyze the competitive landscape between **${userCompany}** and **${competitorList}**.
     
@@ -459,7 +474,7 @@ export const generateCompetitorAnalysis = async (userCompany: string, competitor
   }
 };
 
-export const chatWithAgent = async (history: {role: string, parts: {text: string}[]}[], message: string): Promise<{ text: string, groundingMetadata: any }> => {
+export const chatWithAgent = async (history: { role: string, parts: { text: string }[] }[], message: string): Promise<{ text: string, groundingMetadata: any }> => {
   try {
     const ai = getAI();
     const context = getGlobalContext();
@@ -470,14 +485,14 @@ export const chatWithAgent = async (history: {role: string, parts: {text: string
       config: {
         tools: [],
         systemInstruction: `
-        You are the **Predictive Engine** of the AI Business Suite.
-        Your role is to provide deep, high-level strategic foresight based on the available market data and news.
+        You are the **Predictive Engine (Executive Edition)** of the AI Business Suite.
+        Your role is to provide deep, high-level strategic foresight based on the available market data and news for **February 2026**.
         
         **CONTEXT DATA (Use this for "Evidence"):**
         ${context}
 
         **CORE DIRECTIVE:**
-        Do not just summarize. *Predict*. Use the "Thinking about the future..." persona. Connect dots between unrelated events.
+        Do not just summarize. *Predict*. Use the "Thinking about the future..." persona. Connect dots between unrelated events. Assume all data refers to the **Jan/Feb 2026** fiscal period.
 
         **FORMATTING RULES:**
         - DO NOT use asterisks (**) for bolding. Use plain text and capitalized headers.
@@ -509,14 +524,14 @@ export const chatWithAgent = async (history: {role: string, parts: {text: string
 
     const result = await chat.sendMessage({ message });
     return {
-        text: result.text || "I cannot provide an analysis at this moment.",
-        groundingMetadata: result.candidates?.[0]?.groundingMetadata
+      text: result.text || "I cannot provide an analysis at this moment.",
+      groundingMetadata: result.candidates?.[0]?.groundingMetadata
     };
   } catch (error) {
     console.error("Chat Error:", error);
     return {
-        text: "I am currently experiencing high traffic or connection limits. Please try again in a moment.",
-        groundingMetadata: null
+      text: "I am currently experiencing high traffic or connection limits. Please try again in a moment.",
+      groundingMetadata: null
     };
   }
 }
@@ -551,13 +566,13 @@ export const generateSpeech = async (text: string): Promise<string | null> => {
 
 // Specialized Podcast Generation (Dialogue + MultiSpeaker)
 export const generatePodcastAudio = async (executiveSummary: string): Promise<{ audio: string | null, script: string }> => {
-    const ai = getAI();
-    if (!ai) return { audio: null, script: "" };
+  const ai = getAI();
+  if (!ai) return { audio: null, script: "" };
 
-    try {
-        // 1. Generate Dialogue Script (Fast using Flash)
-        // We limit input to just the executive summary to keep it short (~1.5 mins)
-        const scriptPrompt = `
+  try {
+    // 1. Generate Dialogue Script (Fast using Flash)
+    // We limit input to just the executive summary to keep it short (~1.5 mins)
+    const scriptPrompt = `
         Convert this executive summary into a short, punchy 90-second podcast dialogue between two hosts:
         1. **Alara** (Female, Insightful, Strategic)
         2. **Arda** (Male, Analytical, Data-focused)
@@ -574,48 +589,48 @@ export const generatePodcastAudio = async (executiveSummary: string): Promise<{ 
           Arda: [Text]
         `;
 
-        const scriptResponse = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: scriptPrompt
-        });
-        
-        const script = scriptResponse.text || "";
-        if (!script) return { audio: null, script: "" };
+    const scriptResponse = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: scriptPrompt
+    });
 
-        // 2. Generate Audio with Multi-Speaker
-        const audioResponse = await ai.models.generateContent({
-            model: "gemini-2.5-flash-preview-tts",
-            contents: [{ parts: [{ text: script }] }],
-            config: {
-                responseModalities: [Modality.AUDIO],
-                speechConfig: {
-                    multiSpeakerVoiceConfig: {
-                        speakerVoiceConfigs: [
-                            {
-                                speaker: 'Alara',
-                                voiceConfig: {
-                                    prebuiltVoiceConfig: { voiceName: 'Kore' } // Female-sounding
-                                }
-                            },
-                            {
-                                speaker: 'Arda',
-                                voiceConfig: {
-                                    prebuiltVoiceConfig: { voiceName: 'Fenrir' } // Male-sounding (Deep)
-                                }
-                            }
-                        ]
-                    }
+    const script = scriptResponse.text || "";
+    if (!script) return { audio: null, script: "" };
+
+    // 2. Generate Audio with Multi-Speaker
+    const audioResponse = await ai.models.generateContent({
+      model: "gemini-2.5-flash-preview-tts",
+      contents: [{ parts: [{ text: script }] }],
+      config: {
+        responseModalities: [Modality.AUDIO],
+        speechConfig: {
+          multiSpeakerVoiceConfig: {
+            speakerVoiceConfigs: [
+              {
+                speaker: 'Alara',
+                voiceConfig: {
+                  prebuiltVoiceConfig: { voiceName: 'Kore' } // Female-sounding
                 }
-            }
-        });
+              },
+              {
+                speaker: 'Arda',
+                voiceConfig: {
+                  prebuiltVoiceConfig: { voiceName: 'Fenrir' } // Male-sounding (Deep)
+                }
+              }
+            ]
+          }
+        }
+      }
+    });
 
-        const audioData = audioResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || null;
-        return { audio: audioData, script };
+    const audioData = audioResponse.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || null;
+    return { audio: audioData, script };
 
-    } catch (error) {
-        console.error("Podcast Gen Error:", error);
-        return { audio: null, script: "" };
-    }
+  } catch (error) {
+    console.error("Podcast Gen Error:", error);
+    return { audio: null, script: "" };
+  }
 }
 
 const fileToBase64 = (file: File): Promise<string> => {
@@ -655,11 +670,11 @@ export const generateVeoVideo = async (imageFile: File, prompt: string = "Cinema
 
     while (!operation.done) {
       await new Promise(resolve => setTimeout(resolve, 3000));
-      operation = await ai.operations.getVideosOperation({operation: operation});
+      operation = await ai.operations.getVideosOperation({ operation: operation });
     }
 
     const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
-    
+
     if (!downloadLink) {
       throw new Error("No video URI returned.");
     }

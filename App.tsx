@@ -503,7 +503,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ view, marketPriority, setMa
   return <MainSettings marketPriority={marketPriority} competitors={competitors} userCompany={userCompany} />;
 };
 
-const ONBOARDING_SESSION_KEY = 'ai-business-suite-onboarding-done';
+const ONBOARDING_SESSION_KEY = 'ai-business-suite-onboarding-v2-done';
 
 const App: React.FC = () => {
   // Show onboarding only once per session; skip to dashboard on refresh if already completed
@@ -575,15 +575,18 @@ const App: React.FC = () => {
 
   return (
     // Updated background text-slate-900 to ensure readability
-    <div className="min-h-screen w-full bg-[#F5F5F7] dark:bg-[#374151] text-slate-900 dark:text-white font-sans transition-colors duration-75">
+    <div className="min-h-screen w-full bg-[#f8fafc] dark:bg-[#0f172a] text-slate-900 dark:text-white font-sans transition-colors duration-500 overflow-hidden relative">
       <CommandPalette onNavigate={(tab) => setActiveTab(tab as DashboardTab)} toggleTheme={toggleTheme} />
 
-      {/* Background Ambience Layer for Slate Theme */}
-      <div className="fixed inset-0 pointer-events-none z-0 hidden dark:block">
+      {/* Premium Ambience Layer */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        {/* Animated Mesh Gradients */}
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-600/10 dark:bg-blue-500/10 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/10 dark:bg-purple-500/5 rounded-full blur-[120px] animate-pulse delay-700" />
+        <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] bg-emerald-600/5 dark:bg-emerald-500/5 rounded-full blur-[120px] animate-pulse delay-1000" />
+
         {/* Subtle top sheen */}
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-400/20 to-transparent"></div>
-        {/* Very subtle radial glow to give depth to the flat slate */}
-        <div className="absolute top-[-20%] right-[-10%] w-[1000px] h-[1000px] bg-blue-900/10 rounded-full blur-[120px]"></div>
+        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-blue-400/20 to-transparent shadow-[0_0_20px_rgba(59,130,246,0.3)]"></div>
       </div>
 
       {viewState === 'onboarding' ? (

@@ -82,25 +82,26 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isOpen = fals
 
       {/* Sidebar Container - Drawer on Mobile, Static on Desktop */}
       <div className={`
-            fixed lg:relative inset-y-0 left-0 z-50 flex flex-col h-full bg-white/80 dark:bg-[#374151]/90 backdrop-blur-xl transition-colors duration-75 transition-transform duration-300 ease-in-out border-r border-gray-200 dark:border-white/5
-            w-64 lg:w-72 
+            fixed lg:relative inset-y-0 left-0 z-50 flex flex-col h-full glass-liquid transition-colors duration-75 transition-transform duration-500 ease-in-out border-r border-gray-200 dark:border-white/5
+            w-64 lg:w-72 shadow-2xl
             ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}>
         {/* Logo */}
-        <div className="h-20 flex items-center justify-center lg:justify-start lg:px-6 border-b border-gray-200 dark:border-white/5 shrink-0 group cursor-pointer relative">
+        <div className="h-20 flex items-center justify-center lg:justify-start lg:px-6 border-b border-gray-200 dark:border-white/5 shrink-0 group cursor-pointer relative overflow-hidden">
+          <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-2xl -z-10" />
           <img
             src="https://media.licdn.com/dms/image/v2/D4D0BAQEmph9wW1PzWg/company-logo_200_200/company-logo_200_200/0/1738097380814/scrolli_logo?e=2147483647&v=beta&t=eYQLsmTf_cJKZ69DnG41JY7cSzGcra50-7bFKGLmiD8"
             alt="Scrolli Logo"
-            className="w-8 h-8 rounded-lg flex-shrink-0 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-blue-600/20"
+            className="w-8 h-8 rounded-lg flex-shrink-0 group-hover:scale-110 transition-transform duration-500 shadow-lg shadow-blue-600/20"
           />
           <div className="flex flex-col ml-3 min-w-0">
-            <span className="font-bold text-xl text-gray-900 dark:text-white tracking-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-75">Scrolli</span>
+            <span className="font-bold text-xl text-gray-900 dark:text-white tracking-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-500">Scrolli</span>
             <span className="text-xs text-gray-500 dark:text-gray-400 font-medium tracking-tight mt-0.5">AI Business Suite</span>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 py-6 space-y-1 px-3 lg:px-4 overflow-y-auto custom-scrollbar">
+        <nav className="flex-1 py-6 space-y-2 px-3 lg:px-4 overflow-y-auto custom-scrollbar">
           {navItems.map((item) => {
             const isActive = isGroupActive(item);
             const isDirectlyActive = activeTab === item.id || (item.children?.[0] && activeTab === item.children[0].id);
@@ -109,31 +110,34 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isOpen = fals
               <div key={item.id} className="mb-2">
                 <button
                   onClick={() => onTabChange(item.children?.[0]?.id ?? item.id)}
-                  className={`w-full flex items-center justify-between px-3 py-3 rounded-xl transition-all duration-300 group ${isDirectlyActive
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20 dark:shadow-blue-900/50'
+                  className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-500 group relative overflow-hidden ${isDirectlyActive
+                    ? 'bg-iosBlue text-white shadow-xl shadow-iosBlue/30'
                     : isActive
-                      ? 'bg-gray-100 dark:bg-white/5 text-gray-900 dark:text-white'
-                      : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'
+                      ? 'bg-white/5 text-gray-900 dark:text-white'
+                      : 'text-gray-500 dark:text-gray-400 hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'
                     }`}
                 >
-                  <div className="flex items-center gap-3 overflow-hidden">
+                  <div className="flex items-center gap-3 overflow-hidden relative z-10">
                     <AnimatedIcon
                       icon={item.icon}
-                      className={`w-5 h-5 flex-shrink-0 ${isDirectlyActive ? 'text-white' : isActive ? 'text-blue-500 dark:text-blue-400' : 'text-gray-400 group-hover:text-gray-600 dark:group-hover:text-white'}`}
+                      className={`w-5 h-5 flex-shrink-0 transition-colors duration-500 ${isDirectlyActive ? 'text-white' : isActive ? 'text-blue-500 dark:text-blue-400' : 'text-gray-400 group-hover:text-gray-600 dark:group-hover:text-white'}`}
                       isActive={isActive}
                     />
-                    <span className="font-medium text-sm text-left truncate">{item.label}</span>
+                    <span className="font-bold text-sm text-left truncate tracking-tight">{item.label}</span>
                   </div>
                   {item.children && (
-                    <div className="transition-transform duration-300">
+                    <div className="transition-transform duration-500 relative z-10">
                       {isActive ? <ChevronDown className="w-4 h-4 opacity-50" /> : <ChevronRight className="w-4 h-4 opacity-50" />}
                     </div>
+                  )}
+                  {isDirectlyActive && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer" />
                   )}
                 </button>
 
                 {/* Sub-menu */}
-                <div className={`ml-4 pr-3 overflow-hidden transition-all duration-300 ease-in-out ${isActive && item.children ? 'max-h-60 opacity-100 mt-1' : 'max-h-0 opacity-0'}`}>
-                  <div className="pl-4 border-l border-gray-200 dark:border-white/10 space-y-1">
+                <div className={`ml-4 pr-3 overflow-hidden transition-all duration-500 ease-in-out ${isActive && item.children ? 'max-h-80 opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
+                  <div className="pl-4 border-l-2 border-gray-100 dark:border-white/5 space-y-1">
                     {item.children?.map((child) => (
                       <button
                         key={child.id}
@@ -141,12 +145,13 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isOpen = fals
                           e.stopPropagation();
                           onTabChange(child.id);
                         }}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all group/sub ${activeTab === child.id
-                          ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 font-medium translate-x-1'
-                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 hover:translate-x-1'
+                        className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-[13px] transition-all duration-300 group/sub ${activeTab === child.id
+                          ? 'text-blue-600 dark:text-blue-400 bg-blue-500/5 font-bold translate-x-2'
+                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-500/5 hover:translate-x-2'
                           }`}
                       >
                         <span className="truncate">{child.label}</span>
+                        {activeTab === child.id && <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse ml-auto" />}
                       </button>
                     ))}
                   </div>
@@ -157,8 +162,13 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isOpen = fals
         </nav>
 
         {/* Footer / Version */}
-        <div className="p-6 border-t border-gray-200 dark:border-white/5 shrink-0 text-xs text-gray-500 dark:text-gray-400 text-center">
-          AI Business Suite v1.1 Pro
+        <div className="p-8 border-t border-gray-200 dark:border-white/5 shrink-0">
+          <div className="flex flex-col items-center gap-2">
+            <div className="px-2.5 py-1 bg-gray-100 dark:bg-white/5 rounded-full border border-gray-200 dark:border-white/10">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">v1.2 Platform</span>
+            </div>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">Scrolli Intelligence Systems</p>
+          </div>
         </div>
       </div>
     </>
