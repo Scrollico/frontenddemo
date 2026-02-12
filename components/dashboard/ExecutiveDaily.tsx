@@ -172,7 +172,7 @@ const PodcastView: React.FC<{
   date, playbackSpeed, setPlaybackSpeed, handleSeek, togglePlayback,
   playPlaylistTrack, audioRef, formatTime, stopPlayback
 }) => (
-    <div className="flex flex-col lg:flex-row h-full gap-6 lg:gap-12 px-4 md:px-6 py-4 pt-10 md:pt-4 max-w-6xl mx-auto w-full items-center justify-center">
+    <div className="flex flex-col lg:flex-row h-full gap-6 lg:gap-12 px-4 md:px-6 py-4 pt-20 md:pt-4 max-w-6xl mx-auto w-full items-center justify-center">
       {/* Left Side - Visualizer & Track Info */}
       <div className="flex-none flex flex-col items-center justify-center w-full lg:w-auto">
         <div className="relative w-64 h-64 mb-6 group shrink-0">

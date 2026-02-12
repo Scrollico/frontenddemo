@@ -54,12 +54,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                   setPassword(e.target.value);
                   setError(false);
                 }}
-                placeholder="Access code"
-                className={`w-full bg-white/[0.06] border rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-white/30 text-sm focus:outline-none focus:ring-2 transition-all duration-200 ${
-                  error
+                placeholder="Enter access code"
+                autoComplete="new-password"
+                className={`w-full bg-white/[0.06] border rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-white/30 text-sm focus:outline-none focus:ring-2 transition-all duration-200 ${error
                     ? 'border-red-400/40 focus:border-red-400/60 focus:ring-red-400/10'
                     : 'border-white/10 focus:border-white/20 focus:ring-white/10'
-                }`}
+                  }`}
                 autoFocus
               />
             </div>

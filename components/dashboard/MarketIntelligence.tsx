@@ -204,37 +204,14 @@ const RiskMap = () => {
                     {risks.map((risk, i) => (
                         <div
                             key={i}
-                            className={`absolute w-2.5 h-2.5 rounded-full cursor-help transition-all duration-300 ${hoveredIndex === i ? 'scale-125 z-30' : 'opacity-40 grayscale scale-100 z-10'
-                                }`}
+                            className="absolute w-2 h-2 rounded-full opacity-60 transition-all duration-300 scale-100 z-10"
                             style={{
                                 left: `${5 + risk.impact * 0.9}%`,
                                 bottom: `${10 + risk.probability * 0.8}%`,
                                 backgroundColor: risk.color,
-                                boxShadow: hoveredIndex === i ? `0 0 12px ${risk.color}80` : `0 0 4px ${risk.color}20`
+                                boxShadow: `0 0 6px ${risk.color}40`
                             }}
-                            onMouseEnter={() => setHoveredIndex(i)}
-                            onMouseLeave={() => setHoveredIndex(null)}
-                        >
-                            {hoveredIndex === i && (
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-40">
-                                    <div className="bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-lg p-2 shadow-2xl w-28 md:w-32 animate-in fade-in zoom-in duration-150 origin-bottom">
-                                        <div className="flex justify-between items-start mb-1.5">
-                                            <p className="text-[7px] font-black text-white uppercase tracking-tighter leading-tight">{risk.name}</p>
-                                            <div className="px-1 py-0.5 rounded bg-white/5 text-[5px] font-bold text-white/30 shrink-0 uppercase">Intel</div>
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <div>
-                                                <p className="text-[5px] font-black text-white/20 uppercase tracking-[0.2em] mb-0.5">Mitigation</p>
-                                                <p className="text-[6px] text-gray-400 leading-tight italic border-l border-white/10 pl-1">{risk.mitigation}</p>
-                                            </div>
-                                            <div className="pt-1 border-t border-white/5">
-                                                <p className="text-[7.5px] font-mono text-white/70 font-bold">{risk.metric}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                        />
                     ))}
                 </div>
             </div>
