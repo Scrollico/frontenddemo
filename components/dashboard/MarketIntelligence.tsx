@@ -216,19 +216,19 @@ const RiskMap = () => {
                             onMouseLeave={() => setHoveredIndex(null)}
                         >
                             {hoveredIndex === i && (
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 z-40">
-                                    <div className="bg-slate-950/95 backdrop-blur-3xl border border-white/20 rounded-xl p-2.5 shadow-2xl w-44 animate-in fade-in zoom-in duration-150 origin-bottom">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <p className="text-[8px] font-black text-white uppercase tracking-tight leading-tight">{risk.name}</p>
-                                            <div className="px-1 py-0.5 rounded bg-white/10 text-[6px] font-bold text-white/40 shrink-0 uppercase">Intel</div>
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-40">
+                                    <div className="bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-lg p-2 shadow-2xl w-28 md:w-32 animate-in fade-in zoom-in duration-150 origin-bottom">
+                                        <div className="flex justify-between items-start mb-1.5">
+                                            <p className="text-[7px] font-black text-white uppercase tracking-tighter leading-tight">{risk.name}</p>
+                                            <div className="px-1 py-0.5 rounded bg-white/5 text-[5px] font-bold text-white/30 shrink-0 uppercase">Intel</div>
                                         </div>
-                                        <div className="space-y-2">
+                                        <div className="space-y-1.5">
                                             <div>
-                                                <p className="text-[6px] font-black text-white/30 uppercase tracking-widest mb-1">Mitigation</p>
-                                                <p className="text-[8px] text-gray-400 leading-tight italic border-l border-white/20 pl-1.5">{risk.mitigation}</p>
+                                                <p className="text-[5px] font-black text-white/20 uppercase tracking-[0.2em] mb-0.5">Mitigation</p>
+                                                <p className="text-[6px] text-gray-400 leading-tight italic border-l border-white/10 pl-1">{risk.mitigation}</p>
                                             </div>
-                                            <div className="pt-1.5 border-t border-white/5">
-                                                <p className="text-[9px] font-mono text-white/80 font-bold">{risk.metric}</p>
+                                            <div className="pt-1 border-t border-white/5">
+                                                <p className="text-[7.5px] font-mono text-white/70 font-bold">{risk.metric}</p>
                                             </div>
                                         </div>
                                     </div>
