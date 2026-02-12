@@ -6,6 +6,7 @@ import { generateDailyBriefing, generateSpeech, generateVeoVideo, generatePodcas
 import { MarketPriority } from '../../types';
 import { jsPDF } from 'jspdf';
 import { QUOTES } from '../../data/mockData';
+import { wrapNeuralContent } from '../../utils/neuralUtils';
 
 interface ExecutiveDailyProps {
   view: string; // 'daily', 'daily_briefing', 'daily_export', 'daily_podcast'
@@ -111,7 +112,7 @@ const WeatherWidget = () => {
           </div>
         </div>
         <div className="flex flex-col items-center justify-center gap-1">
-          <CloudSun className="w-10 h-10 text-orange-400 drop-shadow-md" strokeWidth={1.25} />
+          <CloudSun className="w-10 h-10 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.4)]" strokeWidth={1} />
           <span className="text-[10px] text-gray-400 font-medium mt-2">H:{high}° L:{low}°</span>
         </div>
       </div>
@@ -171,9 +172,9 @@ const PodcastView: React.FC<{
   date, playbackSpeed, setPlaybackSpeed, handleSeek, togglePlayback,
   playPlaylistTrack, audioRef, formatTime, stopPlayback
 }) => (
-    <div className="flex flex-col md:flex-row h-full gap-6 md:gap-12 px-4 md:px-6 py-4 max-w-6xl mx-auto w-full items-center justify-center">
+    <div className="flex flex-col lg:flex-row h-full gap-6 lg:gap-12 px-4 md:px-6 py-4 pt-10 md:pt-4 max-w-6xl mx-auto w-full items-center justify-center">
       {/* Left Side - Visualizer & Track Info */}
-      <div className="flex-none flex flex-col items-center justify-center w-full md:w-auto">
+      <div className="flex-none flex flex-col items-center justify-center w-full lg:w-auto">
         <div className="relative w-64 h-64 mb-6 group shrink-0">
           {/* Visual Highlight Glows */}
           <div className={`absolute inset-0 bg-blue-500/10 rounded-full transition-opacity duration-1000 ${isPlaying ? 'opacity-100' : 'opacity-0'}`}></div>
@@ -213,7 +214,7 @@ const PodcastView: React.FC<{
       </div>
 
       {/* Right Side - Controls & Playlist */}
-      <div className="flex-1 w-full max-w-xl flex flex-col gap-6 h-full md:h-auto md:max-h-[600px]">
+      <div className="flex-1 w-full max-w-xl flex flex-col gap-6 h-full lg:h-auto lg:max-h-[600px]">
         {/* Controls Card - Compact */}
         <div className="flex-none bg-white/60 dark:bg-white/5 rounded-3xl p-5 border border-gray-200 dark:border-white/5 shadow-xl backdrop-blur-md">
           {/* Scrubber */}
@@ -320,7 +321,7 @@ const ExportView: React.FC<{
   loading: boolean;
   content: string;
 }> = ({ handleDownloadPDF, handleSendEmail, loading, content }) => (
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 animate-fade-in">
     <GlassCard className="h-80 relative overflow-hidden group" noPadding>
       <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-gray-500/10 to-transparent rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none" />
       <div className="flex flex-col h-full p-8 relative z-20">
@@ -373,10 +374,10 @@ const SourcesSection: React.FC<{ groundingMetadata: any; summaryMode: string }> 
 
   return (
     <div className="mt-16 pt-12 border-t border-gray-200 dark:border-white/10 animate-fade-in">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-10">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-blue-600/10 rounded-2xl flex items-center justify-center border border-blue-500/20 shadow-lg shadow-blue-500/5">
-            <Globe className="w-7 h-7 text-blue-600 dark:text-blue-400" strokeWidth={1.5} />
+          <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shadow-xl shadow-white/5">
+            <Globe className="w-7 h-7 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]" strokeWidth={1} />
           </div>
           <div>
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Intelligence Grounding</h3>
@@ -384,23 +385,23 @@ const SourcesSection: React.FC<{ groundingMetadata: any; summaryMode: string }> 
           </div>
         </div>
 
-        <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-white/5 rounded-full border border-gray-200 dark:border-white/10">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Real-time Signals Active</span>
+        <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/10">
+          <div className="w-2 h-2 rounded-full bg-white animate-pulse shadow-[0_0_8px_rgba(255,255,255,0.8)]"></div>
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Real-time Signals Active</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {newsSources.map((chunk: any, i: number) => (
           <a
             key={i}
             href={chunk.web.uri}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 p-3 bg-white/40 dark:bg-white/5 border border-white/20 dark:border-white/10 rounded-xl hover:bg-white/60 dark:hover:bg-white/10 transition-all group"
+            className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all group"
           >
-            <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center border border-blue-500/20 group-hover:scale-110 transition-transform">
-              <Globe className="w-4 h-4 text-blue-400" />
+            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:scale-110 transition-transform">
+              <Globe className="w-4 h-4 text-white/70" />
             </div>
             <div className="flex-1 min-w-0">
               <h4 className="text-xs font-bold text-gray-900 dark:text-white truncate group-hover:text-blue-400 transition-colors">
@@ -416,12 +417,12 @@ const SourcesSection: React.FC<{ groundingMetadata: any; summaryMode: string }> 
       </div>
 
       {/* Verification Badge */}
-      <div className="mt-10 p-6 glass-liquid rounded-[2rem] border border-blue-500/10 relative overflow-hidden group">
-        <div className="absolute -right-20 -top-20 w-64 h-64 bg-blue-500/5 rounded-full blur-[80px] pointer-events-none" />
+      <div className="mt-10 p-6 glass-liquid rounded-[2rem] border border-white/5 relative overflow-hidden group">
+        <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/5 rounded-full blur-[80px] pointer-events-none" />
 
         <div className="flex items-start gap-5 relative z-10">
-          <div className="p-3 bg-blue-500/10 rounded-2xl shrink-0 mt-0.5 border border-blue-500/20">
-            <BrainCircuit className="w-6 h-6 text-blue-400" strokeWidth={1.5} />
+          <div className="p-3 bg-white/5 rounded-2xl shrink-0 mt-0.5 border border-white/10 shadow-xl">
+            <BrainCircuit className="w-6 h-6 text-white opacity-80" strokeWidth={1} />
           </div>
           <div>
             <p className="text-xs font-black text-white mb-2 uppercase tracking-[0.3em]">Scrolli's RAG AI Engine</p>
@@ -871,7 +872,7 @@ Generated by AI Business Suite
             sectionElements.push(
               <div key={`takeaway-${secIdx}-${idx}`} className="flex items-start gap-3 p-3 mb-2 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20">
                 <Target className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-1 shrink-0" />
-                <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{cleanLine.replace('* ', '')}</span>
+                <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{wrapNeuralContent(cleanLine.replace('* ', ''))}</span>
               </div>
             );
           } else if (currentSectionTitle.toLowerCase().includes('development') && cleanLine.trim().match(/^\d+\./)) {
@@ -904,7 +905,7 @@ Generated by AI Business Suite
               sectionElements.push(
                 <div key={`bullet-${secIdx}-${idx}`} className="flex flex-col sm:flex-row gap-1 sm:gap-2 mb-2 ml-11 text-gray-700 dark:text-gray-300 text-sm">
                   <span className="font-bold text-gray-900 dark:text-white min-w-[120px] text-xs uppercase tracking-wide opacity-80 mt-0.5">{label}</span>
-                  <span className="flex-1 leading-relaxed">{value}</span>
+                  <span className="flex-1 leading-relaxed">{wrapNeuralContent(value)}</span>
                 </div>
               )
             } else if (content.includes('[Link]')) {
@@ -916,10 +917,10 @@ Generated by AI Business Suite
                 </div>
               )
             } else {
-              sectionElements.push(<li key={`li-${secIdx}-${idx}`} className="ml-4 mb-2 text-gray-700 dark:text-gray-300 list-disc pl-2 text-sm leading-relaxed">{content}</li>);
+              sectionElements.push(<li key={`li-${secIdx}-${idx}`} className="ml-4 mb-2 text-gray-700 dark:text-gray-300 list-disc pl-2 text-sm leading-relaxed">{wrapNeuralContent(content)}</li>);
             }
           } else {
-            sectionElements.push(<p key={`p-${secIdx}-${idx}`} className="mb-3 text-sm md:text-base text-gray-700 dark:text-gray-300 leading-relaxed">{line}</p>);
+            sectionElements.push(<p key={`p-${secIdx}-${idx}`} className="mb-3 text-sm md:text-base text-gray-700 dark:text-gray-300 leading-relaxed">{wrapNeuralContent(line)}</p>);
           }
         }
       });

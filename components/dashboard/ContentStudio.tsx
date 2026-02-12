@@ -85,13 +85,13 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
                 onClick={handleGenerate}
                 disabled={!topic || isGenerating}
                 className={`w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 text-white transition-all active:scale-[0.98] relative overflow-hidden group
-                    bg-blue-600/80 hover:bg-blue-500/90 backdrop-blur-xl border border-white/20 shadow-xl shadow-blue-500/30
+                    bg-white/5 hover:bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl
                     ${isGenerating ? 'opacity-70 cursor-wait' : ''}`}
             >
                 {/* Shine effect */}
                 <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-[1200ms] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
-                {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5 fill-current" />}
+                {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5 text-white opacity-80 group-hover:opacity-100" />}
                 {isGenerating ? 'Synthesizing...' : 'Generate Asset'}
             </button>
         </div>
@@ -191,7 +191,7 @@ const ContentStudio: React.FC<ContentStudioProps> = ({ view, onNavigate }) => {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
                     {/* LinkedIn Card */}
                     <div onClick={() => onNavigate?.('content_linkedin')}>
                         <GlassCard className="group relative overflow-hidden min-h-[260px] cursor-pointer bg-white/60 dark:bg-slate-800/40 backdrop-blur-2xl border border-white/20 dark:border-white/10 hover:shadow-2xl" noPadding>
@@ -204,7 +204,7 @@ const ContentStudio: React.FC<ContentStudioProps> = ({ view, onNavigate }) => {
                                 <p className="text-gray-500 dark:text-gray-400 mt-3 text-sm leading-relaxed max-w-sm">
                                     Craft viral, thought-leadership posts optimized for engagement.
                                 </p>
-                                <div className="mt-auto pt-6 flex items-center text-gray-900 dark:text-white font-semibold text-xs tracking-widest uppercase opacity-60 group-hover:opacity-100 transition-opacity">
+                                <div className="mt-auto pt-6 flex items-center text-white font-semibold text-xs tracking-widest uppercase opacity-40 group-hover:opacity-100 transition-opacity">
                                     Open Editor <ArrowRight className="w-3 h-3 ml-2 group-hover:translate-x-1 transition-transform" />
                                 </div>
                             </div>
@@ -300,9 +300,9 @@ const ContentStudio: React.FC<ContentStudioProps> = ({ view, onNavigate }) => {
                         <button
                             onClick={shareToLinkedIn}
                             disabled={!generatedContent}
-                            className="w-full py-4 backdrop-blur-xl bg-[#0A66C2]/90 hover:bg-[#0A66C2] border border-white/20 text-white rounded-2xl font-bold text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-xl shadow-blue-500/20 active:scale-95"
+                            className="w-full py-4 backdrop-blur-xl bg-white/5 hover:bg-white/10 border border-white/20 text-white rounded-2xl font-bold text-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-2xl active:scale-95 group"
                         >
-                            <Share2 className="w-4 h-4" /> Post to LinkedIn
+                            <Share2 className="w-4 h-4 text-white opacity-80 group-hover:opacity-100" /> Post to LinkedIn
                         </button>
                     </div>
                 </div>
@@ -367,10 +367,10 @@ const ContentStudio: React.FC<ContentStudioProps> = ({ view, onNavigate }) => {
                     <button
                         onClick={sendEmail}
                         disabled={!generatedContent}
-                        className="p-4 backdrop-blur-xl bg-blue-600/90 hover:bg-blue-600 border border-white/20 text-white rounded-full shadow-2xl transition-all hover:scale-105 active:scale-95 disabled:opacity-0 disabled:pointer-events-none group"
+                        className="p-4 backdrop-blur-xl bg-white/5 hover:bg-white/10 border border-white/20 text-white rounded-full shadow-2xl transition-all hover:scale-105 active:scale-95 disabled:opacity-0 disabled:pointer-events-none group"
                         title="Send via Email"
                     >
-                        <Mail className="w-6 h-6 group-hover:-translate-y-0.5 transition-transform" />
+                        <Mail className="w-6 h-6 text-white opacity-80 group-hover:opacity-100 group-hover:-translate-y-0.5 transition-transform" />
                     </button>
                 </div>
             </div>

@@ -18,6 +18,7 @@ export interface NicheTopic {
   mentions: number;
   growth: string;
   insight?: string;
+  longDescription?: string;
   isFeatured?: boolean;
   featuredReason?: string;
   referralNews?: { title: string; source: string; url: string }[];

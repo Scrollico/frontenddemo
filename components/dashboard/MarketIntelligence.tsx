@@ -8,6 +8,7 @@ import { HeatmapItem, NicheTopic, ChatMessage, MarketPriority } from '../../type
 import { chatWithAgent, generateMarketSignals, generateCompetitorAnalysis } from '../../services/geminiService';
 import { jsPDF } from 'jspdf';
 import { INSIGHTS_DATA, COMPETITOR_NEWS_MOCK } from '../../data/mockData';
+import { wrapNeuralContent } from '../../utils/neuralUtils';
 
 interface MarketIntelligenceProps {
     view: string;
@@ -51,6 +52,338 @@ const DEFAULT_RADAR_DATA = [
     { subject: 'ESG Score', A: 115, B: 80, fullMark: 150, insight: "Green Bond framework superior" },
     { subject: 'Revenue', A: 90, B: 125, fullMark: 150, insight: "M&A strategy paying off" },
 ];
+
+const SIMULATION_PRESETS = [
+    { label: "Q3 Recession Risk", prompt: "Simulate a Q3 recession scenario: How would it impact our current sector priorities and competitor R&D velocity?" },
+    { label: "Supply Chain Surge", prompt: "What if there is a 20% delay in global supply chains next month? Analyze implications for our top-tier competitors." },
+    { label: "Competitor AI Pivot", prompt: "Analyze the impact if our primary competitor pivots 50% of their R&D to Agentic AI within the next 6 months." }
+];
+
+// --- Chat Component (Defined outside to fix focus loss issue) ---
+
+// --- NEW: Scenario Simulator Component ---
+const ScenarioSimulator = () => {
+    const [inflation, setInflation] = useState(2.4);
+    const [growth, setGrowth] = useState(3.1);
+    const [techVelocity, setTechVelocity] = useState(8.5);
+
+    const calculateSuccess = () => {
+        const base = 70;
+        const inflationImpact = (2.4 - inflation) * 5;
+        const growthImpact = (growth - 3.1) * 10;
+        const velocityImpact = (techVelocity - 8.5) * 2;
+        return Math.min(Math.max(Math.round(base + inflationImpact + growthImpact + velocityImpact), 0), 100);
+    };
+
+    const score = calculateSuccess();
+
+    return (
+        <div className="flex flex-col gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-6">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-gray-400">Simulation Variables</h4>
+                    <div className="space-y-6">
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
+                                <span className="text-gray-500">Global Inflation</span>
+                                <span className="text-white/80">{inflation}%</span>
+                            </div>
+                            <input
+                                type="range" min="0" max="10" step="0.1"
+                                value={inflation}
+                                onChange={(e) => setInflation(parseFloat(e.target.value))}
+                                className="w-full h-1 bg-gray-200 dark:bg-white/10 rounded-lg appearance-none cursor-pointer accent-white/40"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
+                                <span className="text-gray-500">GDP Growth Project.</span>
+                                <span className="text-white/80">{growth}%</span>
+                            </div>
+                            <input
+                                type="range" min="-5" max="10" step="0.1"
+                                value={growth}
+                                onChange={(e) => setGrowth(parseFloat(e.target.value))}
+                                className="w-full h-1 bg-gray-200 dark:bg-white/10 rounded-lg appearance-none cursor-pointer accent-white/40"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
+                                <span className="text-gray-500">Tech Velocity Index</span>
+                                <span className="text-white/80">{techVelocity}/10</span>
+                            </div>
+                            <input
+                                type="range" min="0" max="10" step="0.1"
+                                value={techVelocity}
+                                onChange={(e) => setTechVelocity(parseFloat(e.target.value))}
+                                className="w-full h-1 bg-gray-200 dark:bg-white/10 rounded-lg appearance-none cursor-pointer accent-white/40"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex flex-col items-center justify-center p-8 bg-white/5 rounded-2xl border border-white/10 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-white/5 blur-3xl rounded-full" />
+                    <div className="relative z-10 text-center">
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-8">Success Probability</h4>
+                        <div className="relative w-36 h-36 flex items-center justify-center">
+                            <svg className="w-full h-full -rotate-90">
+                                <circle
+                                    cx="72" cy="72" r="66"
+                                    className="stroke-gray-200 dark:stroke-white/5 fill-none"
+                                    strokeWidth="8"
+                                />
+                                <circle
+                                    cx="72" cy="72" r="66"
+                                    className="stroke-white/70 fill-none transition-all duration-500 shadow-[0_0_15px_rgba(255,255,255,0.3)]"
+                                    strokeWidth="10"
+                                    strokeDasharray={414.7}
+                                    strokeDashoffset={414.7 - (414.7 * score) / 100}
+                                    strokeLinecap="round"
+                                />
+                            </svg>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                <span className="text-4xl font-black text-white">{score}%</span>
+                                <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mt-1">Forecast</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// --- NEW: Risk Map Component ---
+const RiskMap = () => {
+    const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+    const risks = [
+        {
+            name: 'Supply Chain Anomaly',
+            probability: 40,
+            impact: 85,
+            color: '#ffffff',
+            mitigation: 'Diversifying tier-2 suppliers in APAC region.',
+            metric: 'Risk: -$2.4M'
+        },
+        {
+            name: 'Regulatory Pivot',
+            probability: 70,
+            impact: 50,
+            color: '#a1a1aa',
+            mitigation: 'Early compliance audit with EU standards.',
+            metric: 'Align: 65%'
+        },
+        {
+            name: 'Competitor M&A',
+            probability: 25,
+            impact: 90,
+            color: '#e2e8f0',
+            mitigation: 'Accelerating R&D for next-gen features.',
+            metric: 'Threat: High'
+        },
+        {
+            name: 'Energy Surge',
+            probability: 60,
+            impact: 30,
+            color: '#52525b',
+            mitigation: 'Switching to fixed-rate renewable contracts.',
+            metric: 'Opex: +12%'
+        },
+    ];
+
+    return (
+        <div className="space-y-4">
+            <h4 className="text-xs font-black uppercase tracking-widest text-gray-400">Risk Heat Matrix</h4>
+            <div className="relative w-full h-64 bg-white/5 rounded-2xl border border-white/10 p-6 overflow-hidden">
+                {/* Axis Labels */}
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-[9px] font-bold text-gray-500 uppercase tracking-widest">Impact Intensity</div>
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 -rotate-90 text-[9px] font-bold text-gray-500 uppercase tracking-widest">Occurrence Prob.</div>
+
+                <div className="w-full h-full border-l border-b border-white/10 relative">
+                    {risks.map((risk, i) => (
+                        <div
+                            key={i}
+                            className={`absolute w-2.5 h-2.5 rounded-full cursor-help transition-all duration-300 ${hoveredIndex === i ? 'scale-125 z-30' : 'opacity-40 grayscale scale-100 z-10'
+                                }`}
+                            style={{
+                                left: `${5 + risk.impact * 0.9}%`,
+                                bottom: `${10 + risk.probability * 0.8}%`,
+                                backgroundColor: risk.color,
+                                boxShadow: hoveredIndex === i ? `0 0 12px ${risk.color}80` : `0 0 4px ${risk.color}20`
+                            }}
+                            onMouseEnter={() => setHoveredIndex(i)}
+                            onMouseLeave={() => setHoveredIndex(null)}
+                        >
+                            {hoveredIndex === i && (
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 z-40">
+                                    <div className="bg-slate-950/95 backdrop-blur-3xl border border-white/20 rounded-xl p-2.5 shadow-2xl w-44 animate-in fade-in zoom-in duration-150 origin-bottom">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <p className="text-[8px] font-black text-white uppercase tracking-tight leading-tight">{risk.name}</p>
+                                            <div className="px-1 py-0.5 rounded bg-white/10 text-[6px] font-bold text-white/40 shrink-0 uppercase">Intel</div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <div>
+                                                <p className="text-[6px] font-black text-white/30 uppercase tracking-widest mb-1">Mitigation</p>
+                                                <p className="text-[8px] text-gray-400 leading-tight italic border-l border-white/20 pl-1.5">{risk.mitigation}</p>
+                                            </div>
+                                            <div className="pt-1.5 border-t border-white/5">
+                                                <p className="text-[9px] font-mono text-white/80 font-bold">{risk.metric}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// --- Chat Component (Defined outside to fix focus loss issue) ---
+const ChatComponent: React.FC<{
+    messages: ExtendedChatMessage[];
+    input: string;
+    setInput: (val: string) => void;
+    handleSend: (text?: string) => void;
+    isTyping: boolean;
+    marketPriority: string;
+    scrollRef: React.RefObject<HTMLDivElement>;
+}> = ({ messages, input, setInput, handleSend, isTyping, marketPriority, scrollRef }) => {
+    const renderMessageContent = (msg: ExtendedChatMessage) => {
+        const lines = msg.text.split('\n');
+        return (
+            <>
+                {lines.map((line, i) => {
+                    // Headers/Sections - Replaced Emojis with Icons
+                    const cleanLine = line.replace(/###/g, '').replace(/\*/g, '').replace(/🔮|📊|📡|🛡️|🚀/g, '').trim();
+
+                    if (line.includes('Forecast') || line.includes('🔮')) return <h4 key={i} className="font-bold text-white/80 mt-4 mb-2 uppercase text-xs tracking-wider flex items-center gap-2"><Sparkles className="w-3 h-3 text-white/60" /> {cleanLine}</h4>;
+                    if (line.includes('Evidence') || line.includes('📊')) return <h4 key={i} className="font-bold text-white/80 mt-4 mb-2 uppercase text-xs tracking-wider flex items-center gap-2"><BarChart3 className="w-3 h-3 text-white/60" /> {cleanLine}</h4>;
+                    if (line.includes('Signal') || line.includes('📡')) return <h4 key={i} className="font-bold text-white/80 mt-4 mb-2 uppercase text-xs tracking-wider flex items-center gap-2"><Signal className="w-3 h-3 text-white/60" /> {cleanLine}</h4>;
+                    if (line.includes('Risk') || line.includes('🛡️')) return <h4 key={i} className="font-bold text-white/80 mt-4 mb-2 uppercase text-xs tracking-wider flex items-center gap-2"><AlertTriangle className="w-3 h-3 text-white/60" /> {cleanLine}</h4>;
+                    if (line.includes('Action') || line.includes('🚀')) return <h4 key={i} className="font-bold text-white/80 mt-4 mb-2 uppercase text-xs tracking-wider flex items-center gap-2"><Target className="w-3 h-3 text-white/60" /> {cleanLine}</h4>;
+
+                    // Blockquotes
+                    if (line.trim().startsWith('>')) {
+                        return (
+                            <div key={i} className="pl-3 border-l-2 border-white/20 my-2 italic text-gray-400 text-sm">
+                                {wrapNeuralContent(line.replace('>', '').trim())}
+                            </div>
+                        )
+                    }
+
+                    // Bullet points
+                    if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
+                        return (
+                            <div key={i} className="flex items-start gap-2 mb-1 pl-1">
+                                <div className="w-1 h-1 rounded-full bg-white/40 mt-2 shrink-0"></div>
+                                <span className="text-gray-300 text-sm leading-relaxed">{wrapNeuralContent(line.replace(/^[-*]\s/, ''))}</span>
+                            </div>
+                        )
+                    }
+
+                    if (line.trim() === '') return <div key={i} className="h-1" />;
+
+                    return <p key={i} className="text-gray-200 text-sm leading-relaxed mb-1">{wrapNeuralContent(line)}</p>;
+                })}
+
+                {/* Data References Section */}
+                {msg.groundingMetadata?.groundingChunks?.length > 0 && (
+                    <div className="mt-6 pt-4 border-t border-white/10">
+                        <h5 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+                            <Globe className="w-3 h-3" /> Data References
+                        </h5>
+                        <div className="flex flex-wrap gap-2">
+                            {msg.groundingMetadata.groundingChunks.map((chunk: any, i: number) => (
+                                chunk.web?.uri && (
+                                    <a key={i} href={chunk.web.uri} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded px-2 py-1 text-[10px] text-white/60 transition-colors duration-75">
+                                        <span className="truncate max-w-[150px]">{chunk.web.title || "Source"}</span>
+                                        <ArrowUpRight className="w-2.5 h-2.5 opacity-40 shadow-[0_0_5px_rgba(255,255,255,0.5)]" />
+                                    </a>
+                                )
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </>
+        );
+    };
+
+    return (
+        <div className="absolute inset-0 flex flex-col min-h-0 bg-slate-800/80 backdrop-blur-3xl">
+            <div className="flex-1 min-h-0 overflow-y-auto p-4 pb-2 space-y-4 custom-scrollbar scroll-smooth" ref={scrollRef} style={{ paddingBottom: 'calc(1rem + 150px)' }}>
+                {messages.map((msg) => (
+                    <div key={msg.id} className={`flex ${msg.role === 'ai' ? 'justify-start' : 'justify-end'}`}>
+                        <div className={`max-w-[85%] rounded-2xl p-4 shadow-2xl ${msg.role === 'ai' ? 'bg-white/5 text-gray-200 border border-white/10 backdrop-blur-xl' : 'bg-white/10 text-white border border-white/20 backdrop-blur-2xl shadow-[0_0_20px_rgba(255,255,255,0.05)]'}`}>
+                            {msg.role === 'ai' ? (
+                                <div>
+                                    {renderMessageContent(msg)}
+                                </div>
+                            ) : (
+                                <p className="text-sm">{msg.text}</p>
+                            )}
+                        </div>
+                    </div>
+                ))}
+                {isTyping && (
+                    <div className="flex justify-start animate-fade-in">
+                        <div className="bg-white/5 rounded-2xl p-4 flex items-center gap-2 border border-white/10 backdrop-blur-xl">
+                            <div className="w-2 h-2 bg-white/40 rounded-full animate-bounce"></div>
+                            <div className="w-2 h-2 bg-white/40 rounded-full animate-bounce delay-75"></div>
+                            <div className="w-2 h-2 bg-white/40 rounded-full animate-bounce delay-150"></div>
+                        </div>
+                    </div>
+                )}
+                <div className="h-2"></div>
+            </div>
+
+            <div className="absolute bottom-0 left-0 right-0 shrink-0 p-4 bg-slate-800/95 border-t border-white/10 backdrop-blur-md z-20">
+                {/* What-If Simulation Presets */}
+                {messages.length === 1 && (
+                    <div className="flex gap-2 overflow-x-auto pb-3 custom-scrollbar mb-2">
+                        {SIMULATION_PRESETS.map((preset, idx) => (
+                            <button
+                                key={idx}
+                                onClick={() => handleSend(preset.prompt)}
+                                className="whitespace-nowrap px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[10px] font-bold text-white/80 transition-all hover:scale-105 active:scale-95"
+                            >
+                                {preset.label}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                <div className="flex gap-2 mb-2 overflow-x-auto pb-1 custom-scrollbar">
+                    {SUGGESTED_PROMPTS.map((prompt, i) => (
+                        <button key={i} onClick={() => handleSend(prompt)} className="whitespace-nowrap px-3 py-1 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-[10px] font-medium text-gray-400 transition-colors duration-75">
+                            {prompt}
+                        </button>
+                    ))}
+                </div>
+                <div className="flex gap-2">
+                    <input
+                        type="text"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                        placeholder="Ask about market trends..."
+                        className="flex-1 bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-white/30 transition-all text-white placeholder-gray-500"
+                    />
+                    <button
+                        onClick={() => handleSend()}
+                        disabled={!input.trim() || isTyping}
+                        className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all shadow-xl border border-white/20 disabled:opacity-30 disabled:shadow-none shadow-[0_0_15px_rgba(255,255,255,0.05)]"
+                    >
+                        <Send className="w-5 h-5 opacity-80" strokeWidth={1.5} />
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMode, marketPriority, competitors, userCompany }) => {
     const [sectors, setSectors] = useState<EnrichedHeatmapItem[]>([]);
@@ -219,37 +552,70 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
     const [isTyping, setIsTyping] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
 
+    const handleSend = async (textOverride?: string) => {
+        const messageText = textOverride || input;
+        if (!messageText.trim() || isTyping) return;
+
+        const userMsg: ExtendedChatMessage = {
+            id: Date.now().toString(),
+            role: 'user',
+            text: messageText,
+            timestamp: Date.now()
+        };
+
+        setMessages(prev => [...prev, userMsg]);
+        setInput('');
+        setIsTyping(true);
+
+        try {
+            const result = await chatWithAgent(messageText, marketPriority);
+            const aiMsg: ExtendedChatMessage = {
+                id: (Date.now() + 1).toString(),
+                role: 'ai',
+                text: result.text,
+                timestamp: Date.now(),
+                groundingMetadata: result.groundingMetadata
+            };
+            setMessages(prev => [...prev, aiMsg]);
+        } catch (error) {
+            console.error("Chat Error:", error);
+        } finally {
+            setIsTyping(false);
+        }
+    };
+
     useEffect(() => {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
     }, [messages]);
 
-    const handleSend = async (textOverride?: string) => {
-        const textToSend = textOverride || input.trim();
-        if (!textToSend) return;
-
-        const userMsg: ExtendedChatMessage = { id: Date.now().toString(), role: 'user', text: textToSend, timestamp: Date.now() };
-        setMessages(prev => [...prev, userMsg]);
-        setInput('');
-        setIsTyping(true);
-
-        const history = messages.map(m => ({
-            role: m.role === 'ai' ? 'model' : 'user',
-            parts: [{ text: m.text }]
-        }));
-
-        const response = await chatWithAgent(history, userMsg.text);
-
-        const aiMsg: ExtendedChatMessage = {
-            id: (Date.now() + 1).toString(),
-            role: 'ai',
-            text: response.text,
-            timestamp: Date.now(),
-            groundingMetadata: response.groundingMetadata
-        };
-        setMessages(prev => [...prev, aiMsg]);
-        setIsTyping(false);
+    // --- Sources Footer Sub-Component ---
+    // --- Sources Footer Sub-Component ---
+    const SourcesFooter = () => {
+        return (
+            <div className="pt-12 border-t border-gray-200 dark:border-white/10 mt-12 pb-20">
+                <div className="flex items-center gap-2 mb-6">
+                    <Globe className="w-4 h-4 text-white/40 shadow-xl shadow-white/10" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400">Grounding Source Pipelines</span>
+                </div>
+                <div className="flex flex-wrap gap-4">
+                    {competitors.map((comp, idx) => (
+                        idx < 4 && (
+                            <a key={idx} href="#" className="flex items-center gap-2 group">
+                                <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center p-1.5 border border-white/10 group-hover:border-white/40 transition-colors shadow-xl">
+                                    <Globe className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-bold text-gray-900 dark:text-white group-hover:text-white transition-colors">{comp} Intelligence</span>
+                                    <span className="text-[8px] text-gray-500 uppercase tracking-tighter">Verified Pipeline</span>
+                                </div>
+                            </a>
+                        )
+                    ))}
+                </div>
+            </div>
+        );
     };
 
     const toggleInsight = (id: number) => {
@@ -325,18 +691,18 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
 
     // --- Sub-Components ---
     const HeatmapComponent = ({ limit }: { limit?: number }) => (
-        <div className={`grid ${limit ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'} gap-4`}>
+        <div className={`grid ${limit ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'} gap-4`}>
             {(limit ? sectors.slice(0, limit) : sectors).map((item, idx) => {
                 const isPositive = item.change >= 0;
                 return (
                     <div key={idx} className="group cursor-pointer" onClick={() => setSelectedSector(item)}>
-                        <GlassCard className={`relative hover:-translate-y-1 hover:shadow-2xl h-36 overflow-hidden border backdrop-blur-3xl ${item.isFeatured ? 'border-blue-500/40 bg-blue-500/5' : 'border-white/20 dark:border-white/10 bg-white/60 dark:bg-slate-800/40'}`} noPadding>
+                        <GlassCard className={`relative hover:-translate-y-1 hover:shadow-2xl h-36 overflow-hidden border backdrop-blur-3xl ${item.isFeatured ? 'border-white/40 bg-white/5 shadow-[0_0_20px_rgba(255,255,255,0.05)]' : 'border-white/20 dark:border-white/10 bg-white/60 dark:bg-slate-800/40'}`} noPadding>
                             <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${isPositive ? 'from-emerald-500/10' : 'from-red-500/10'} to-transparent rounded-full blur-2xl -mr-10 -mt-10 transition-opacity uppercase`} />
 
                             {/* Featured Badge */}
                             {item.isFeatured && (
-                                <div className="absolute top-0 left-0 px-3 py-1 bg-blue-600 text-[9px] font-bold text-white rounded-br-xl z-20 flex items-center gap-1 animate-pulse-soft">
-                                    <Sparkles className="w-2.5 h-2.5" /> FEATURED
+                                <div className="absolute top-0 left-0 px-3 py-1 bg-white/10 backdrop-blur-md text-[9px] font-black text-white rounded-br-xl z-20 flex items-center gap-1 border border-white/20 shadow-xl">
+                                    <Sparkles className="w-2.5 h-2.5 opacity-80" /> FEATURED
                                 </div>
                             )}
 
@@ -355,16 +721,16 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
                                     <div className="flex items-center gap-1">
                                         <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mr-1">RAG AI Confidence</span>
                                         <div className="flex gap-0.5 items-end h-3">
-                                            <div className="w-1 rounded-sm bg-blue-500 h-1.5"></div>
-                                            <div className="w-1 rounded-sm bg-blue-500 h-2"></div>
-                                            <div className="w-1 rounded-sm bg-blue-500/30 h-3"></div>
+                                            <div className="w-1 rounded-sm bg-white/40 h-1.5 shadow-[0_0_5px_rgba(255,255,255,0.2)]"></div>
+                                            <div className="w-1 rounded-sm bg-white/50 h-2 shadow-[0_0_8px_rgba(255,255,255,0.3)]"></div>
+                                            <div className="w-1 rounded-sm bg-white/20 h-3"></div>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="absolute inset-0 bg-white/95 dark:bg-[#1C1C1E]/95 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-center px-6">
                                     {item.isFeatured ? (
                                         <>
-                                            <p className="text-[10px] text-blue-500 uppercase font-bold mb-1 tracking-widest">Why Featured?</p>
+                                            <p className="text-[10px] text-white/40 uppercase font-black mb-1 tracking-widest shadow-sm">Why Featured?</p>
                                             <p className="text-sm font-medium text-gray-900 dark:text-gray-200 leading-snug">{item.featuredReason}</p>
                                         </>
                                     ) : (
@@ -374,7 +740,7 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
                                         </>
                                     )}
                                     <div className="mt-3 flex items-center justify-between">
-                                        <span className={`text-[9px] px-2 py-0.5 rounded-full border ${item.volatility === 'High' ? 'border-red-500/30 text-red-500' : 'border-gray-500/30 text-gray-500'}`}>
+                                        <span className={`text-[9px] px-2 py-0.5 rounded-full border bg-white/5 border-white/20 text-white/60 font-black tracking-widest uppercase shadow-lg`}>
                                             {item.volatility} VOL
                                         </span>
                                     </div>
@@ -397,14 +763,14 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
                         <FileText className="w-4 h-4" /> Market Intelligence Feed
                     </h3>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {itemsToDisplay.map((item, idx) => {
                         const isPositive = item.change >= 0;
                         return (
                             <GlassCard key={idx} className="group relative p-4 bg-white/30 dark:bg-slate-800/20 border border-white/20 dark:border-white/5 hover:bg-white/50 dark:hover:bg-slate-800/40 transition-colors duration-75" noPadding>
                                 <div className="flex items-start gap-4">
-                                    <div className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center border backdrop-blur-sm ${isPositive ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-red-500/10 border-red-500/20 text-red-500'}`}>
-                                        {isPositive ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
+                                    <div className={`shrink-0 w-10 h-10 rounded-lg flex items-center justify-center border backdrop-blur-md bg-white/5 border-white/10 text-white opacity-60 shadow-xl`}>
+                                        {isPositive ? <TrendingUp className="w-5 h-5 shadow-[0_0_10px_rgba(255,255,255,0.3)]" /> : <TrendingDown className="w-5 h-5 opacity-80" />}
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-2 mb-1">
@@ -466,7 +832,7 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
                             </div>
                             <div className="p-4 bg-black/5 dark:bg-white/5 rounded-xl border border-white/10">
                                 <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1 block">Sentiment Velocity</span>
-                                <p className="text-lg font-bold text-blue-500 font-mono">92/100</p>
+                                <p className="text-lg font-bold text-white/80 font-mono shadow-[0_0_10px_rgba(255,255,255,0.1)]">92/100</p>
                                 <p className="text-[9px] text-gray-400 italic">Institutional Monitoring</p>
                             </div>
                         </div>
@@ -488,16 +854,15 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
                                     <Share2 className="w-3.5 h-3.5" /> SHARE
                                 </button>
                             </div>
-                            <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed p-5 bg-iosBlue/5 rounded-2xl border border-iosBlue/10 relative overflow-hidden">
-                                <div className="absolute top-0 left-0 w-1 h-full bg-iosBlue"></div>
-                                {topic.insight}
+                            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed font-light mb-8 italic border-l-2 border-blue-500 pl-4">
+                                {wrapNeuralContent(topic.longDescription || topic.insight)}
                             </p>
                         </div>
 
                         {/* Section 2: Trend Chart */}
                         <div className="h-48 w-full">
                             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                <Activity className="w-4 h-4 text-emerald-500" /> Velocity
+                                <Activity className="w-4 h-4 text-white opacity-40 shadow-sm" /> Velocity
                             </h3>
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={trendData}>
@@ -575,15 +940,15 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
                     {/* Scrollable Content */}
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
                         {/* Bloomberg Terminal Style Metrics Bar */}
-                        <div className="grid grid-cols-2 gap-px bg-gray-200 dark:bg-white/10 rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 shadow-lg">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-gray-200 dark:bg-white/10 rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 shadow-lg">
                             <div className="bg-white dark:bg-[#151516] p-4">
                                 <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1 block">Velocity Score</span>
                                 <div className="flex items-center gap-2">
                                     <span className="text-xl font-mono font-bold text-gray-900 dark:text-white">84.2</span>
                                     <div className="flex gap-0.5">
-                                        <div className="w-1 h-3 bg-blue-500 rounded-full"></div>
-                                        <div className="w-1 h-4 bg-blue-500 rounded-full"></div>
-                                        <div className="w-1 h-2 bg-blue-500 rounded-full"></div>
+                                        <div className="w-1 h-3 bg-white/40 rounded-full shadow-lg"></div>
+                                        <div className="w-1 h-4 bg-white/50 rounded-full shadow-lg"></div>
+                                        <div className="w-1 h-2 bg-white/20 rounded-full"></div>
                                     </div>
                                 </div>
                                 <p className="text-[9px] text-gray-400 mt-1 uppercase">Accelerating vs Prev. Month</p>
@@ -620,7 +985,7 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
                                 <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed font-medium mb-4">
                                     "{sector.insight}"
                                 </p>
-                                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-iosBlue/10">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-iosBlue/10">
                                     <div>
                                         <span className="text-[9px] text-gray-500 font-bold uppercase block mb-1">Catalyst Logic</span>
                                         <p className="text-xs text-gray-900 dark:text-gray-100 font-bold">{sector.driver}</p>
@@ -643,8 +1008,8 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
                                     {sector.referralNews.map((news, i) => (
                                         <a key={i} href={news.url} className="block p-4 bg-white/40 dark:bg-white/5 border border-gray-100 dark:border-white/5 rounded-xl hover:border-blue-500/30 transition-all group">
                                             <div className="flex justify-between items-start mb-1">
-                                                <span className="text-[9px] font-bold text-blue-500 uppercase tracking-wider">{news.source}</span>
-                                                <ArrowUpRight className="w-3 h-3 text-gray-400 group-hover:text-blue-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                                                <span className="text-[9px] font-black text-white/40 uppercase tracking-wider">{news.source}</span>
+                                                <ArrowUpRight className="w-3 h-3 text-white/30 group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shadow-sm" />
                                             </div>
                                             <h4 className="text-xs font-bold text-gray-900 dark:text-white leading-snug">{news.title}</h4>
                                         </a>
@@ -667,32 +1032,32 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
     };
 
     const NicheComponent = () => (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {nicheTopics.map((item, idx) => (
                 <div key={idx} onClick={() => setSelectedNiche(item)} className="cursor-pointer group">
-                    <GlassCard className={`h-full p-6 bg-white/60 dark:bg-slate-800/40 backdrop-blur-xl border ${item.isFeatured ? 'border-blue-500/40 bg-blue-500/5 shadow-blue-500/10' : 'border-white/20 dark:border-white/10'} hover:border-blue-500/30 hover:shadow-xl transition-all relative overflow-hidden`} noPadding>
+                    <GlassCard className={`h-full p-6 bg-white/60 dark:bg-slate-800/40 backdrop-blur-xl border ${item.isFeatured ? 'border-white/40 bg-white/5 shadow-[0_0_20px_rgba(255,255,255,0.05)]' : 'border-white/20 dark:border-white/10'} hover:border-white/30 hover:shadow-xl transition-all relative overflow-hidden`} noPadding>
                         <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${item.signal === 'High' ? 'from-emerald-500/10' : item.signal === 'Medium' ? 'from-blue-500/10' : 'from-gray-500/10'} to-transparent rounded-full blur-2xl -mr-8 -mt-8`} />
 
                         {/* Featured Badge */}
                         {item.isFeatured && (
-                            <div className="absolute top-0 left-0 px-2 py-0.5 bg-blue-600 text-[8px] font-bold text-white rounded-br-lg z-20 flex items-center gap-1">
+                            <div className="absolute top-0 left-0 px-2 py-0.5 bg-white/10 backdrop-blur-md text-[8px] font-black text-white rounded-br-lg z-20 flex items-center gap-1 border border-white/20 shadow-xl">
                                 <Sparkles className="w-2 h-2" /> RAG FEATURED
                             </div>
                         )}
 
                         <div className="relative z-10 flex flex-col h-full">
                             <div className="flex justify-between items-start mb-3">
-                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${item.signal === 'High' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : item.signal === 'Medium' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20' : 'bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-white/10'}`}>
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider border shadow-xl bg-white/5 text-white/80 border-white/10`}>
                                     {item.signal} Signal
                                 </span>
                                 <span className={`text-xs font-bold ${item.growth.startsWith('+') ? 'text-emerald-500' : 'text-red-500'}`}>{item.growth}</span>
                             </div>
 
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 leading-tight group-hover:text-blue-500 transition-colors duration-75">{item.topic}</h3>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 leading-tight group-hover:text-white transition-colors duration-75 shadow-sm">{item.topic}</h3>
                             <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-3 leading-relaxed mb-4 flex-1">
                                 {item.isFeatured ? (
                                     <span className="flex flex-col gap-1">
-                                        <span className="text-blue-500 font-bold uppercase text-[9px] tracking-widest">High Impact Insight</span>
+                                        <span className="text-white/40 font-black uppercase text-[9px] tracking-widest shadow-sm">High Impact Insight</span>
                                         {item.insight}
                                     </span>
                                 ) : item.insight}
@@ -703,8 +1068,8 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
                                     <Activity className="w-3.5 h-3.5" />
                                     <span className="text-[10px] font-medium uppercase tracking-wider">{item.mentions} Mentions</span>
                                 </div>
-                                <div className="w-6 h-6 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-all">
-                                    <ArrowUpRight className="w-3 h-3" />
+                                <div className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center border border-white/10 group-hover:bg-white/20 group-hover:text-white transition-all shadow-xl">
+                                    <ArrowUpRight className="w-3 h-3 text-white/40 group-hover:text-white" />
                                 </div>
                             </div>
                         </div>
@@ -746,7 +1111,7 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
                                     </div>
                                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">{item.summary}</p>
                                 </div>
-                                <ChevronRight className={`w-4 h-4 text-gray-300 transition-transform duration-300 ${isExpanded ? 'rotate-90 text-blue-500' : ''}`} />
+                                <ChevronRight className={`w-4 h-4 text-white/30 transition-transform duration-300 shadow-sm ${isExpanded ? 'rotate-90 text-white shadow-[0_0_10px_rgba(255,255,255,0.5)]' : ''}`} />
                             </div>
                             <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
                                 <div className="p-4 pt-0 pl-12 pr-8">
@@ -801,9 +1166,9 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
         <div className="mt-8 space-y-4">
             <div className="flex items-center justify-between border-b border-gray-200 dark:border-white/10 pb-4">
                 <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <Newspaper className="w-4 h-4 text-purple-500" /> Intelligence Feed & Signals
+                    <Newspaper className="w-4 h-4 text-white/40 shadow-sm" /> Intelligence Feed & Signals
                 </h3>
-                <span className="text-[10px] bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-1 rounded font-medium">
+                <span className="text-[10px] bg-white/5 border border-white/10 text-white/60 px-2 py-1 rounded font-black uppercase tracking-widest shadow-xl">
                     Live Updates
                 </span>
             </div>
@@ -827,17 +1192,17 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
                                 </div>
                                 <span className="text-[10px] text-gray-400">{news.date}</span>
                             </div>
-                            <h4 className="text-sm font-medium text-gray-900 dark:text-white leading-snug group-hover:text-blue-500 transition-colors duration-75">{news.title}</h4>
+                            <h4 className="text-sm font-medium text-gray-900 dark:text-white leading-snug group-hover:text-white transition-colors duration-75 shadow-sm">{news.title}</h4>
                             <div className="mt-2 flex items-center gap-2">
                                 <span className="text-[10px] text-gray-400">Impact Score:</span>
                                 <div className="flex gap-0.5">
                                     {[1, 2, 3].map(i => (
-                                        <div key={i} className={`w-3 h-1 rounded-full ${i <= (news.impact === 'High' ? 3 : news.impact === 'Medium' ? 2 : 1) ? 'bg-blue-500' : 'bg-gray-200 dark:bg-gray-700'}`}></div>
+                                        <div key={i} className={`w-3 h-1 rounded-full shadow-sm ${i <= (news.impact === 'High' ? 3 : news.impact === 'Medium' ? 2 : 1) ? 'bg-white/50' : 'bg-white/10'}`}></div>
                                     ))}
                                 </div>
                             </div>
                         </div>
-                        <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors duration-75 shrink-0" />
+                        <ArrowUpRight className="w-4 h-4 text-white/30 group-hover:text-white transition-colors duration-75 shrink-0 shadow-sm" />
                     </a>
                 ))}
             </div>
@@ -849,7 +1214,7 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
             return (
                 <div className="bg-white/95 dark:bg-[#1C1C1E]/95 backdrop-blur-xl p-4 rounded-xl border border-gray-200 dark:border-white/10 shadow-2xl min-w-[240px]">
                     <h4 className="font-bold text-gray-900 dark:text-white mb-3 pb-2 border-b border-gray-100 dark:border-white/10 flex items-center gap-2 uppercase tracking-wider text-[10px]">
-                        <Crosshair className="w-3.5 h-3.5 text-blue-500" /> {label} Analysis
+                        <Crosshair className="w-3.5 h-3.5 text-white/60 shadow-sm" /> {label} Analysis
                     </h4>
                     <div className="space-y-3">
                         {payload.map((entry: any, index: number) => (
@@ -864,7 +1229,7 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
                     </div>
                     <div className="mt-4 pt-3 border-t border-gray-100 dark:border-white/10">
                         <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-snug">
-                            <span className="font-bold text-blue-500 uppercase tracking-wider text-[9px] mr-1">Signal:</span>
+                            <span className="font-black text-white/40 uppercase tracking-widest text-[9px] mr-1 shadow-sm">Signal:</span>
                             {payload[0]?.payload?.insight}
                         </p>
                     </div>
@@ -956,163 +1321,14 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
         );
     };
 
-    const SourcesFooter = () => {
-        if (!groundingMetadata?.groundingChunks?.length) return null;
-        return (
-            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-white/10 px-2 pb-4">
-                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">Live Data Sources</h4>
-                <div className="flex flex-wrap gap-2">
-                    {groundingMetadata.groundingChunks.map((chunk: any, i: number) => (
-                        chunk.web?.uri && (
-                            <a key={i} href={chunk.web.uri} target="_blank" rel="noopener noreferrer" className="text-[10px] flex items-center gap-1 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 px-2 py-1 rounded transition-colors duration-75">
-                                <Globe className="w-3 h-3" />
-                                <span className="max-w-[150px] truncate">{chunk.web.title || new URL(chunk.web.uri).hostname}</span>
-                            </a>
-                        )
-                    ))}
-                </div>
-            </div>
-        )
-    }
-
-    const ChatComponent = () => {
-        // Basic Markdown Parser for Bold Text
-        const parseBold = (text: string) => {
-            return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        };
-
-        const renderMessageContent = (msg: ExtendedChatMessage) => {
-            const lines = msg.text.split('\n');
-            return (
-                <>
-                    {lines.map((line, i) => {
-                        // Headers/Sections - Replaced Emojis with Icons
-                        // Removing emoji chars and rendering corresponding Lucide icon
-                        const cleanLine = line.replace(/###/g, '').replace(/\*/g, '').replace(/🔮|📊|📡|🛡️|🚀/g, '').trim();
-
-                        if (line.includes('Forecast') || line.includes('🔮')) return <h4 key={i} className="font-bold text-purple-400 mt-4 mb-2 uppercase text-xs tracking-wider flex items-center gap-2"><Sparkles className="w-3 h-3" /> {cleanLine}</h4>;
-                        if (line.includes('Evidence') || line.includes('📊')) return <h4 key={i} className="font-bold text-blue-400 mt-4 mb-2 uppercase text-xs tracking-wider flex items-center gap-2"><BarChart3 className="w-3 h-3" /> {cleanLine}</h4>;
-                        if (line.includes('Signal') || line.includes('📡')) return <h4 key={i} className="font-bold text-emerald-400 mt-4 mb-2 uppercase text-xs tracking-wider flex items-center gap-2"><Signal className="w-3 h-3" /> {cleanLine}</h4>;
-                        if (line.includes('Risk') || line.includes('🛡️')) return <h4 key={i} className="font-bold text-red-400 mt-4 mb-2 uppercase text-xs tracking-wider flex items-center gap-2"><AlertTriangle className="w-3 h-3" /> {cleanLine}</h4>;
-                        if (line.includes('Action') || line.includes('🚀')) return <h4 key={i} className="font-bold text-orange-400 mt-4 mb-2 uppercase text-xs tracking-wider flex items-center gap-2"><Target className="w-3 h-3" /> {cleanLine}</h4>;
-
-                        // Blockquotes
-                        if (line.trim().startsWith('>')) {
-                            return (
-                                <div key={i} className="pl-3 border-l-2 border-blue-500 my-2 italic text-gray-400 text-sm">
-                                    {line.replace('>', '').trim()}
-                                </div>
-                            )
-                        }
-
-                        // Bullet points
-                        if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
-                            return (
-                                <div key={i} className="flex items-start gap-2 mb-1 pl-1">
-                                    <div className="w-1 h-1 rounded-full bg-gray-500 mt-2 shrink-0"></div>
-                                    <span className="text-gray-300 text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: parseBold(line.replace(/^[-*]\s/, '')) }}></span>
-                                </div>
-                            )
-                        }
-
-                        if (line.trim() === '') return <div key={i} className="h-1" />;
-
-                        return <p key={i} className="text-gray-200 text-sm leading-relaxed mb-1" dangerouslySetInnerHTML={{ __html: parseBold(line) }}></p>;
-                    })}
-
-                    {/* Data References Section */}
-                    {msg.groundingMetadata?.groundingChunks?.length > 0 && (
-                        <div className="mt-6 pt-4 border-t border-white/10">
-                            <h5 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1">
-                                <Globe className="w-3 h-3" /> Data References
-                            </h5>
-                            <div className="flex flex-wrap gap-2">
-                                {msg.groundingMetadata.groundingChunks.map((chunk: any, i: number) => (
-                                    chunk.web?.uri && (
-                                        <a key={i} href={chunk.web.uri} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 bg-white/5 hover:bg-blue-900/20 border border-white/10 rounded px-2 py-1 text-[10px] text-blue-400 transition-colors duration-75">
-                                            <span className="truncate max-w-[150px]">{chunk.web.title || "Source"}</span>
-                                            <ArrowUpRight className="w-2.5 h-2.5 opacity-50" />
-                                        </a>
-                                    )
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </>
-            );
-        };
-
-        return (
-            <div className="absolute inset-0 flex flex-col min-h-0 bg-slate-800/80">
-                {/* Messages: scrollable, with padding so last message isn't under input bar */}
-                <div className="flex-1 min-h-0 overflow-y-auto p-4 pb-2 space-y-4 custom-scrollbar scroll-smooth" ref={scrollRef} style={{ paddingBottom: 'calc(1rem + 88px)' }}>
-                    {messages.map((msg) => (
-                        <div key={msg.id} className={`flex ${msg.role === 'ai' ? 'justify-start' : 'justify-end'}`}>
-                            <div className={`max-w-[85%] rounded-2xl p-4 ${msg.role === 'ai' ? 'bg-white/5 text-gray-200 border border-white/10' : 'bg-blue-600 text-white shadow-md'}`}>
-                                {msg.role === 'ai' ? (
-                                    <div>
-                                        {renderMessageContent(msg)}
-                                    </div>
-                                ) : (
-                                    <p className="text-sm">{msg.text}</p>
-                                )}
-                            </div>
-                        </div>
-                    ))}
-                    {isTyping && (
-                        <div className="flex justify-start animate-fade-in">
-                            <div className="bg-white/5 rounded-2xl p-4 flex items-center gap-2 border border-white/10">
-                                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
-                                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-75"></div>
-                                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce delay-150"></div>
-                            </div>
-                        </div>
-                    )}
-                    {/* Spacing element to ensure last message isn't hidden behind edge cases */}
-                    <div className="h-2"></div>
-                </div>
-
-                {/* Input Bar - Pinned to bottom of panel */}
-                <div className="absolute bottom-0 left-0 right-0 shrink-0 p-4 bg-slate-800/95 border-t border-white/10 backdrop-blur-md z-20">
-                    {messages.length === 1 && (
-                        <div className="flex gap-2 overflow-x-auto pb-3 custom-scrollbar">
-                            {SUGGESTED_PROMPTS.map((prompt, i) => (
-                                <button key={i} onClick={() => handleSend(prompt)} className="whitespace-nowrap px-3 py-1.5 bg-white/5 hover:bg-blue-900/20 border border-white/10 rounded-lg text-xs font-medium text-gray-300 transition-colors duration-75">
-                                    {prompt}
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                    <div className="flex gap-2">
-                        <input
-                            type="text"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                            placeholder="Ask about market trends..."
-                            className="flex-1 bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-white placeholder-gray-400"
-                        />
-                        <button
-                            onClick={() => handleSend()}
-                            disabled={!input.trim() || isTyping}
-                            className="p-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:shadow-none"
-                        >
-                            <Send className="w-5 h-5" strokeWidth={1.5} />
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
     if (view === 'market_heatmap') {
         return (
-            <div className="h-full flex flex-col space-y-8 pb-10">
+            <div className="h-full flex flex-col space-y-8 pb-32">
                 <div className="flex justify-between items-center">
-                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Global Sector Heatmap</h2>
-                    <button onClick={handleRefresh} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-all shadow-lg shadow-blue-500/20">
-                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                        {loading ? 'Refreshing AI...' : 'Refresh Signal'}
+                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Global Sector Heatmap</h2>
+                    <button onClick={handleRefresh} className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-sm font-black transition-all shadow-xl border border-white/10">
+                        <RefreshCw className={`w-4 h-4 text-white ${loading ? 'animate-spin' : ''}`} strokeWidth={2.5} />
+                        {loading ? 'REFRESHING...' : 'REFRESH SIGNAL'}
                     </button>
                 </div>
                 <HeatmapComponent />
@@ -1126,10 +1342,10 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
         return (
             <div className="flex flex-col space-y-12 pb-32 relative">
                 <div className="flex justify-between items-center">
-                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Emerging-Niche Topics</h2>
-                    <button onClick={handleRefresh} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-all shadow-lg shadow-blue-500/20">
-                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                        {loading ? 'Scanning...' : 'Scan New Niches'}
+                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Emerging-Niche Topics</h2>
+                    <button onClick={handleRefresh} className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-sm font-black transition-all shadow-xl border border-white/10">
+                        <RefreshCw className={`w-4 h-4 text-white ${loading ? 'animate-spin' : ''}`} strokeWidth={2.5} />
+                        {loading ? 'SCANNING...' : 'SCAN NEW NICHES'}
                     </button>
                 </div>
                 <NicheComponent />
@@ -1151,10 +1367,10 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
         return (
             <div className="flex flex-col space-y-6 pb-10">
                 <div className="flex justify-between items-center">
-                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Competitor Analysis</h2>
-                    <button onClick={handleRadarRefresh} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-all shadow-lg shadow-blue-500/20">
-                        <RefreshCw className={`w-4 h-4 ${radarLoading ? 'animate-spin' : ''}`} />
-                        {radarLoading ? 'Analyzing...' : 'Refresh Analysis'}
+                    <h2 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Competitor Analysis</h2>
+                    <button onClick={handleRadarRefresh} className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-sm font-black transition-all shadow-xl border border-white/10">
+                        <RefreshCw className={`w-4 h-4 text-white ${radarLoading ? 'animate-spin' : ''}`} strokeWidth={2.5} />
+                        {radarLoading ? 'ANALYZING...' : 'REFRESH ANALYSIS'}
                     </button>
                 </div>
 
@@ -1207,22 +1423,57 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
 
     if (view === 'market_chat') {
         return (
-            <div className="h-[85vh] min-h-[650px] flex flex-col space-y-6 pb-6 w-full max-w-5xl mx-auto">
-                <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Predictive Engine</h2>
-                <GlassCard className="flex-1 flex flex-col h-full bg-white/60 dark:bg-slate-800/40 backdrop-blur-2xl border border-white/20 dark:border-white/10 overflow-hidden relative" noPadding>
-                    <div className="p-4 border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 shrink-0">
-                        <div className="flex items-center gap-2">
-                            <div className="p-1.5 bg-gray-200 dark:bg-white/10 rounded-lg text-gray-700 dark:text-white">
-                                <BrainCircuit className="w-4 h-4" />
-                            </div>
-                            <h3 className="font-semibold text-gray-900 dark:text-white">Predictive Engine</h3>
+            <div className="h-[90vh] flex flex-col space-y-6 pb-40 w-full max-w-7xl mx-auto overflow-y-auto px-4 lg:px-6">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 py-4 md:py-8">
+                    <div>
+                        <h2 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Predictive Engine</h2>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                            Structural modeling of market variables feeding real-time intelligence streams.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    {/* Simulator and Risk Map */}
+                    <div className="lg:col-span-12 xl:col-span-5 flex flex-col gap-8">
+                        <GlassCard className="bg-white/60 dark:bg-slate-800/80 backdrop-blur-2xl border border-white/20 dark:border-white/10">
+                            <ScenarioSimulator />
+                        </GlassCard>
+                        <GlassCard className="bg-white/60 dark:bg-slate-800/80 backdrop-blur-2xl border border-white/20 dark:border-white/10">
+                            <RiskMap />
+                        </GlassCard>
+                    </div>
+
+                    {/* Chat Area */}
+                    <div className="lg:col-span-12 xl:col-span-7 flex flex-col gap-4">
+                        <div className="flex items-center gap-3 px-4 mt-2">
+                            <div className="h-px flex-1 bg-white/10" />
+                            <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">Neural Integration Layer</span>
+                            <div className="h-px flex-1 bg-white/10" />
                         </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Ask about correlations, forecasts, or specific data points.</p>
+                        <GlassCard className="h-[650px] flex flex-col bg-white/60 dark:bg-slate-800/95 backdrop-blur-2xl border border-white/20 dark:border-white/10 overflow-hidden relative shadow-2xl shadow-blue-500/5 group" noPadding>
+                            <div className="p-4 border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 shrink-0">
+                                <div className="flex items-center gap-2">
+                                    <div className="p-1.5 bg-blue-500/10 rounded-lg text-blue-500">
+                                        <Sparkles className="w-4 h-4" />
+                                    </div>
+                                    <h3 className="font-bold text-gray-900 dark:text-white uppercase tracking-wider text-xs">Intelligence Stream</h3>
+                                </div>
+                            </div>
+                            <div className="flex-1 relative overflow-hidden flex flex-col">
+                                <ChatComponent
+                                    messages={messages}
+                                    input={input}
+                                    setInput={setInput}
+                                    handleSend={handleSend}
+                                    isTyping={isTyping}
+                                    marketPriority={marketPriority}
+                                    scrollRef={scrollRef}
+                                />
+                            </div>
+                        </GlassCard>
                     </div>
-                    <div className="flex-1 relative overflow-hidden flex flex-col">
-                        <ChatComponent />
-                    </div>
-                </GlassCard>
+                </div>
             </div>
         );
     }
@@ -1261,7 +1512,15 @@ const MarketIntelligence: React.FC<MarketIntelligenceProps> = ({ view, isDarkMod
                         <p className="text-xs text-gray-400 mt-1">Ask about correlations, forecasts, or specific data points.</p>
                     </div>
                     <div className="flex-1 min-h-0 relative overflow-hidden flex flex-col">
-                        <ChatComponent />
+                        <ChatComponent
+                            messages={messages}
+                            input={input}
+                            setInput={setInput}
+                            handleSend={handleSend}
+                            isTyping={isTyping}
+                            marketPriority={marketPriority}
+                            scrollRef={scrollRef}
+                        />
                     </div>
                 </GlassCard>
             </div>

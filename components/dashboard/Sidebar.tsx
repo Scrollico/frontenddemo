@@ -109,7 +109,15 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isOpen = fals
             return (
               <div key={item.id} className="mb-2">
                 <button
-                  onClick={() => onTabChange(item.children?.[0]?.id ?? item.id)}
+                  onClick={() => {
+                    if (item.children) {
+                      // On mobile, if clicking a category, we might just want to expand/collapse 
+                      // if it's not the active group.
+                      onTabChange(item.children[0].id);
+                    } else {
+                      onTabChange(item.id);
+                    }
+                  }}
                   className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-500 group relative overflow-hidden ${isDirectlyActive
                     ? 'bg-iosBlue text-white shadow-xl shadow-iosBlue/30'
                     : isActive
@@ -120,7 +128,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isOpen = fals
                   <div className="flex items-center gap-3 overflow-hidden relative z-10">
                     <AnimatedIcon
                       icon={item.icon}
-                      className={`w-5 h-5 flex-shrink-0 transition-colors duration-500 ${isDirectlyActive ? 'text-white' : isActive ? 'text-blue-500 dark:text-blue-400' : 'text-gray-400 group-hover:text-gray-600 dark:group-hover:text-white'}`}
+                      className={`w-5 h-5 flex-shrink-0 transition-all duration-500 ${isDirectlyActive ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]' : isActive ? 'text-white/90 drop-shadow-[0_0_5px_rgba(255,255,255,0.4)]' : 'text-gray-400 group-hover:text-white/80'}`}
                       isActive={isActive}
                     />
                     <span className="font-bold text-sm text-left truncate tracking-tight">{item.label}</span>
